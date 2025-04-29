@@ -186,6 +186,12 @@ class _LandingPageState extends State<LandingPage> {
 
     return List.generate(20, (index) {
       final catIndex = index % 5;
+      
+      // Determine if this product has an offer (about 40% of products)
+      final hasOffer = index % 5 == 0 || index % 7 == 0;
+      final offerPrice = hasOffer ? (19.99 + index * 10) * 0.8 : null;
+      final offerEndDate = hasOffer ? DateTime.now().add(Duration(days: 7 + index % 14)) : null;
+      
       return prod_model.Product(
         id: 'product_${index + 1}',
         merchantDetail: prod_model.MerchantDetail(
@@ -238,6 +244,10 @@ class _LandingPageState extends State<LandingPage> {
         isBanned: false,
         isDeleted: false,
         createdAt: DateTime.now().subtract(Duration(days: index)),
+        offer: hasOffer ? prod_model.Offer(
+          price: offerPrice!,
+          offerEndDate: offerEndDate,
+        ) : null,
       );
     });
   }

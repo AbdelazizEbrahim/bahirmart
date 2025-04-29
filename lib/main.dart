@@ -3,9 +3,18 @@ import 'package:provider/provider.dart';
 import 'package:bahirmart/core/models/user_model.dart';
 import 'package:bahirmart/core/navigation/app_router.dart';
 import 'package:bahirmart/theme/app_theme.dart';
+import 'core/services/cart_service.dart';
 
 void main() {
-  runApp(const BahirMartApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartService()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: const BahirMartApp(),
+    ),
+  );
 }
 
 class BahirMartApp extends StatelessWidget {
@@ -13,14 +22,11 @@ class BahirMartApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<UserProvider>(
-      create: (_) => UserProvider(),
-      child: MaterialApp(
-        title: 'BahirMart',
-        theme: AppTheme.theme,
-        initialRoute: '/',
-        onGenerateRoute: AppRouter.generateRoute,
-      ),
+    return MaterialApp(
+      title: 'BahirMart',
+      theme: AppTheme.theme,
+      initialRoute: '/',
+      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }

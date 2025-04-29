@@ -258,7 +258,7 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
             Wrap(
               spacing: 8.0,
-              children: ['FLAT', 'PERPIECE', 'PERKG', 'FREE'].map((type) {
+              children: ['FLAT', 'PERPIECE', 'PERKG', 'FREE', 'PERKM'].map((type) {
                 return ChoiceChip(
                   label: Text(type),
                   selected: _selectedDeliveryType == type,
@@ -364,6 +364,17 @@ class _ProductsPageState extends State<ProductsPage> {
     ];
 
     return List.generate(5, (index) {
+      // Determine if this product has an offer (all ads have offers)
+      final offerPrice = 699.99 - (index * 50);
+      final offerEndDate = DateTime.now().add(Duration(days: 7 - index));
+      
+      // Set delivery-specific prices
+      final deliveryTypes = ['FLAT', 'PERPIECE', 'PERKG', 'FREE', 'PERKM'];
+      final deliveryType = deliveryTypes[index % deliveryTypes.length];
+      final deliveryPrice = 5.99 + (index % 3);
+      final kilogramPerPrice = deliveryType == 'PERKG' ? 3.99 + (index % 3) : null;
+      final kilometerPerPrice = deliveryType == 'PERKM' ? 2.99 + (index % 3) : null;
+      
       return ad_model.Ad(
         id: 'ad_${index + 1}',
         product: prod_model.Product(
@@ -398,11 +409,17 @@ class _ProductsPageState extends State<ProductsPage> {
               createdDate: DateTime.now().subtract(Duration(days: index + 1)),
             ),
           ],
-          delivery: 'FLAT',
-          deliveryPrice: 5.99,
+          delivery: deliveryType,
+          deliveryPrice: deliveryPrice,
+          kilogramPerPrice: kilogramPerPrice,
+          kilometerPerPrice: kilometerPerPrice,
           isBanned: false,
           isDeleted: false,
           createdAt: DateTime.now().subtract(Duration(days: index)),
+          offer: prod_model.Offer(
+            price: offerPrice,
+            offerEndDate: offerEndDate,
+          ),
         ),
         merchantDetail: ad_model.MerchantDetail(
           merchantId: 'merchant_${index + 1}',
@@ -434,8 +451,18 @@ class _ProductsPageState extends State<ProductsPage> {
 
     return List.generate(50, (index) {
       final catIndex = index % 5;
-      final deliveryTypes = ['FLAT', 'PERPIECE', 'PERKG', 'FREE'];
+      final deliveryTypes = ['FLAT', 'PERPIECE', 'PERKG', 'FREE', 'PERKM'];
       final deliveryType = deliveryTypes[index % deliveryTypes.length];
+      
+      // Determine if this product has an offer (about 30% of products)
+      final hasOffer = index % 3 == 0;
+      final offerPrice = hasOffer ? 19.99 + index * 5 : null;
+      final offerEndDate = hasOffer ? DateTime.now().add(Duration(days: 7 + index % 14)) : null;
+      
+      // Set delivery-specific prices
+      final deliveryPrice = 4.99 + (index % 3);
+      final kilogramPerPrice = deliveryType == 'PERKG' ? 2.99 + (index % 3) : null;
+      final kilometerPerPrice = deliveryType == 'PERKM' ? 1.99 + (index % 3) : null;
       
       return prod_model.Product(
         id: 'product_${index + 1}',
@@ -486,10 +513,16 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
         ),
         delivery: deliveryType,
-        deliveryPrice: 4.99,
+        deliveryPrice: deliveryPrice,
+        kilogramPerPrice: kilogramPerPrice,
+        kilometerPerPrice: kilometerPerPrice,
         isBanned: false,
         isDeleted: false,
         createdAt: DateTime.now().subtract(Duration(days: index)),
+        offer: hasOffer ? prod_model.Offer(
+          price: offerPrice!,
+          offerEndDate: offerEndDate,
+        ) : null,
       );
     });
   }

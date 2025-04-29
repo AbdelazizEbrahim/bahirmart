@@ -9,6 +9,7 @@ import 'package:carousel_slider/carousel_slider.dart' as carousel hide CarouselC
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:bahirmart/main.dart';
+import 'package:bahirmart/core/services/cart_service.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final prod_model.Product product;
@@ -205,19 +206,51 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    currencyFormat.format(widget.product.price),
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      color: Theme.of(context).primaryColor,
-                                      fontWeight: FontWeight.bold,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (widget.product.hasActiveOffer)
+                                      Text(
+                                        currencyFormat.format(widget.product.price),
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          decoration: TextDecoration.lineThrough,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        currencyFormat.format(widget.product.currentPrice),
+                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                          color: Theme.of(context).primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    if (widget.product.hasActiveOffer)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            '${widget.product.discountPercentage.toStringAsFixed(0)}% OFF',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -579,36 +612,51 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
               child: Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Add to cart functionality
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Added to cart'),
-                            backgroundColor: Colors.green,
+                    child: Consumer<CartService>(
+                      builder: (context, cartService, child) {
+                        final isInCart = cartService.items.any((item) => item.product.id == widget.product.id);
+                        
+                        return ElevatedButton(
+                          onPressed: () {
+                            if (isInCart) {
+                              Navigator.pushNamed(context, '/cart');
+                            } else {
+                              cartService.addItem(widget.product);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${widget.product.productName} added to cart'),
+                                  duration: const Duration(seconds: 2),
+                                  action: SnackBarAction(
+                                    label: 'View Cart',
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/cart');
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
+                          child: Text(isInCart ? 'View Cart' : 'Add to Cart'),
                         );
                       },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Add to Cart'),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: Buy now functionality
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Proceeding to checkout'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
+                        // Add to cart and proceed to checkout
+                        final cartService = Provider.of<CartService>(context, listen: false);
+                        cartService.addItem(widget.product);
+                        
+                        // Navigate to checkout
+                        Navigator.pushNamed(context, '/checkout');
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
