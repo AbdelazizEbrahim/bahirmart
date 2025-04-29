@@ -2,7 +2,7 @@ class Product {
   final String id;
   final MerchantDetail merchantDetail;
   final String productName;
-  final Category category;
+  final ProductCategory category;
   final double price;
   final int quantity;
   final int soldQuantity;
@@ -29,49 +29,30 @@ class Product {
     required this.category,
     required this.price,
     required this.quantity,
-    this.soldQuantity = 0,
+    required this.soldQuantity,
     required this.description,
-    this.images = const [],
-    this.variant = const [],
-    this.size = const [],
-    this.brand = 'Hand Made',
+    required this.images,
+    required this.variant,
+    required this.size,
+    required this.brand,
     required this.location,
-    this.review = const [],
+    required this.review,
     required this.delivery,
     required this.deliveryPrice,
-    this.isBanned = false,
+    required this.isBanned,
     this.banReason,
     this.bannedAt,
-    this.isDeleted = false,
+    required this.isDeleted,
     this.trashDate,
     required this.createdAt,
   });
 }
 
-class MerchantDetail {
-  final String merchantId;
-  final String merchantName;
-  final String merchantEmail;
-
-  MerchantDetail({
-    required this.merchantId,
-    required this.merchantName,
-    required this.merchantEmail,
-  });
-}
-
-class Category {
+class ProductCategory {
   final String categoryId;
   final String categoryName;
 
-  Category({required this.categoryId, required this.categoryName});
-}
-
-class Location {
-  final String type;
-  final List<double> coordinates;
-
-  Location({this.type = 'Point', required this.coordinates});
+  ProductCategory({required this.categoryId, required this.categoryName});
 }
 
 class Review {
@@ -89,8 +70,27 @@ class Review {
 }
 
 class BanReason {
-  final String? reason;
-  final String? description;
+  final String reason;
+  final String description;
 
-  BanReason({this.reason, this.description});
+  BanReason({required this.reason, required this.description});
+}
+
+class MerchantDetail {
+  final String merchantId;
+  final String merchantName;
+  final String merchantEmail;
+
+  MerchantDetail({
+    required this.merchantId,
+    required this.merchantName,
+    required this.merchantEmail,
+  });
+}
+
+class Location {
+  final String type;
+  final List<double> coordinates;
+
+  Location({required this.type, required this.coordinates});
 }
