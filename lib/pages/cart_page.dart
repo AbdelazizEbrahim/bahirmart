@@ -6,6 +6,9 @@ import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/product_model.dart';
 import 'package:bahirmart/core/services/cart_service.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:bahirmart/pages/product_detail_page.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -13,7 +16,23 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BahirMartAppBar(title: 'Shopping Cart'),
+      appBar: BahirMartAppBar(
+        title: 'Shopping Cart',
+        actions: [
+          Consumer<CartService>(
+            builder: (context, cartService, child) {
+              if (cartService.itemCount > 0) {
+                return IconButton(
+                  icon: const Icon(Icons.delete_sweep),
+                  onPressed: () => _showClearCartConfirmation(context),
+                  tooltip: 'Clear Cart',
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
       body: Consumer<CartService>(
         builder: (context, cartService, child) {
           if (cartService.itemCount == 0) {
@@ -185,6 +204,35 @@ class CartPage extends StatelessWidget {
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      // Get payment gateway URL
+                                      final paymentUrl = await _getPaymentGatewayUrl(merchantId, total);
+                                      
+                                      // Launch the payment URL
+                                      if (paymentUrl != null) {
+                                        final Uri uri = Uri.parse(paymentUrl);
+                                        if (await canLaunchUrl(uri)) {
+                                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Could not launch payment gateway')),
+                                          );
+                                        }
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('Checkout'),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -194,62 +242,55 @@ class CartPage extends StatelessWidget {
                   },
                 ),
               ),
-              
-              // Checkout button
-              Container(
-                padding: const EdgeInsets.all(AppSizes.paddingMedium),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  child: Row(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Total Amount',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          Text(
-                            '\$${cartService.totalAmount.toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Navigate to checkout page
-                            Navigator.pushNamed(context, '/checkout');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: const Text('Proceed to Checkout'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           );
         },
       ),
       bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 2),
+    );
+  }
+
+  Future<String?> _getPaymentGatewayUrl(String merchantId, double amount) async {
+    // This is a placeholder for the actual API call to get the payment gateway URL
+    // In a real implementation, you would call your backend API to get the payment URL
+    try {
+      // Simulate API call delay
+      await Future.delayed(const Duration(seconds: 1));
+      
+      // For demonstration purposes, return a dummy URL
+      // In a real app, this would come from your backend
+      return 'https://payment-gateway.example.com/checkout?merchantId=$merchantId&amount=$amount';
+    } catch (e) {
+      debugPrint('Error getting payment URL: $e');
+      return null;
+    }
+  }
+
+  void _showClearCartConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Cart'),
+        content: const Text('Are you sure you want to remove all items from your cart?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Provider.of<CartService>(context, listen: false).clearCart();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cart cleared'),
+                ),
+              );
+            },
+            child: const Text('Clear', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -274,18 +315,7 @@ class CartItemTile extends StatelessWidget {
         ),
       ),
       onDismissed: (direction) {
-        Provider.of<CartService>(context, listen: false).removeItem(item.product.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${item.product.productName} removed from cart'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () {
-                Provider.of<CartService>(context, listen: false).addItem(item.product, quantity: item.quantity);
-              },
-            ),
-          ),
-        );
+        _showDeleteConfirmation(context);
       },
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.paddingMedium),
@@ -293,18 +323,28 @@ class CartItemTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                item.product.images.isNotEmpty ? item.product.images[0] : 'https://via.placeholder.com/100',
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailPage(product: item.product),
+                  ),
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  item.product.images.isNotEmpty ? item.product.images[0] : 'https://via.placeholder.com/100',
                   width: 80,
                   height: 80,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 80,
+                    height: 80,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.image_not_supported),
+                  ),
                 ),
               ),
             ),
@@ -357,7 +397,7 @@ class CartItemTile extends StatelessWidget {
                         ),
                   ),
                   
-                  // Quantity controls
+                  // Quantity controls and delete button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -402,11 +442,23 @@ class CartItemTile extends StatelessWidget {
                           ),
                         ],
                       ),
-                      Text(
-                        '\$${(item.product.currentPrice * item.quantity).toStringAsFixed(2)}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Row(
+                        children: [
+                          Text(
+                            '\$${(item.product.currentPrice * item.quantity).toStringAsFixed(2)}',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => _showDeleteConfirmation(context),
+                            iconSize: 20,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -415,6 +467,34 @@ class CartItemTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Item'),
+        content: Text('Are you sure you want to remove ${item.product.productName} from your cart?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Provider.of<CartService>(context, listen: false).removeItem(item.product.id);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${item.product.productName} removed from cart'),
+                ),
+              );
+            },
+            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
@@ -427,6 +507,8 @@ class CartItemTile extends StatelessWidget {
         return 'Per kg (\$${product.kilogramPerPrice?.toStringAsFixed(2) ?? product.deliveryPrice.toStringAsFixed(2)} per kg)';
       case 'PERKM':
         return 'Per km (\$${product.kilometerPerPrice?.toStringAsFixed(2) ?? product.deliveryPrice.toStringAsFixed(2)} per km)';
+      case 'FLAT':
+        return 'Flat rate (\$${product.deliveryPrice.toStringAsFixed(2)})';
       case 'FREE':
         return 'Free delivery';
       default:

@@ -617,12 +617,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                         final isInCart = cartService.items.any((item) => item.product.id == widget.product.id);
                         
                         return ElevatedButton(
-                          onPressed: () {
+                      onPressed: () {
                             if (isInCart) {
                               Navigator.pushNamed(context, '/cart');
                             } else {
                               cartService.addItem(widget.product);
-                              ScaffoldMessenger.of(context).showSnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('${widget.product.productName} added to cart'),
                                   duration: const Duration(seconds: 2),
@@ -632,16 +632,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                       Navigator.pushNamed(context, '/cart');
                                     },
                                   ),
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
                           ),
+                        );
+                            }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                           child: Text(isInCart ? 'View Cart' : 'Add to Cart'),
                         );
                       },

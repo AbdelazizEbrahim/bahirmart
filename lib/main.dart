@@ -23,10 +23,10 @@ class BahirMartApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'BahirMart',
-      theme: AppTheme.theme,
-      initialRoute: '/',
-      onGenerateRoute: AppRouter.generateRoute,
+        title: 'BahirMart',
+        theme: AppTheme.theme,
+        initialRoute: '/',
+        onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }

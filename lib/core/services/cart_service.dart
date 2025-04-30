@@ -18,7 +18,7 @@ class CartService extends ChangeNotifier {
   
   // Calculate total delivery cost
   double get deliveryCost {
-    return _items.fold(0, (sum, item) => sum + item.product.calculateDeliveryCost(item.quantity));
+    return calculateDeliveryCost();
   }
   
   // Calculate total amount including delivery
@@ -124,6 +124,14 @@ class CartService extends ChangeNotifier {
   // Get total amount for a specific merchant
   double getMerchantTotal(String merchantId) {
     return getMerchantSubtotal(merchantId) + getMerchantDeliveryCost(merchantId);
+  }
+
+  double calculateDeliveryCost() {
+    double totalDeliveryCost = 0;
+    for (var item in _items) {
+      totalDeliveryCost += item.product.calculateDeliveryCost(item.quantity);
+    }
+    return totalDeliveryCost;
   }
 }
 

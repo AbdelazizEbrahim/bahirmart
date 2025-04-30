@@ -67,10 +67,16 @@ class Product {
       case 'PERPIECE':
         return deliveryPrice * quantity;
       case 'PERKG':
-        return kilogramPerPrice != null ? kilogramPerPrice! * quantity : deliveryPrice * quantity;
+        // For PERKG, multiply delivery price by quantity and weight (assuming 1kg per item if not specified)
+        return deliveryPrice * quantity * 1; // Default 1kg per item
       case 'PERKM':
-        return kilometerPerPrice != null ? kilometerPerPrice! * quantity : deliveryPrice * quantity;
+        // For PERKM, use default 20KM distance and multiply by quantity
+        return deliveryPrice * quantity * 20; // Default 20KM
+      case 'FLAT':
+        // For FLAT, return the same delivery price regardless of quantity
+        return deliveryPrice;
       case 'FREE':
+        return 0;
       default:
         return 0;
     }

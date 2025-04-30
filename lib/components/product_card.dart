@@ -164,26 +164,26 @@ class ProductCard extends StatelessWidget {
                                   ),
                                 )
                               : IconButton(
-                                  icon: const Icon(Icons.add_shopping_cart),
-                                  onPressed: () {
-                                    cartService.addItem(product);
-                                    
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('${product.productName} added to cart'),
-                                        duration: const Duration(seconds: 2),
-                                        action: SnackBarAction(
-                                          label: 'View Cart',
-                                          onPressed: () {
-                                            Navigator.pushNamed(context, '/cart');
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  iconSize: 20,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.add_shopping_cart),
+                        onPressed: () {
+                          cartService.addItem(product);
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${product.productName} added to cart'),
+                              duration: const Duration(seconds: 2),
+                              action: SnackBarAction(
+                                label: 'View Cart',
+                                onPressed: () {
+                                  Navigator.pushNamed(context, '/cart');
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                                 );
                         },
                       ),
