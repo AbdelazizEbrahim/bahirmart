@@ -4,6 +4,7 @@ import 'package:bahirmart/core/models/user_model.dart';
 import 'package:bahirmart/core/navigation/app_router.dart';
 import 'package:bahirmart/theme/app_theme.dart';
 import 'core/services/cart_service.dart';
+import 'package:bahirmart/pages/profile_page.dart';
 
 void main() {
   runApp(
@@ -23,10 +24,13 @@ class BahirMartApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'BahirMart',
-        theme: AppTheme.theme,
-        initialRoute: '/',
-        onGenerateRoute: AppRouter.generateRoute,
+      title: 'BahirMart',
+      theme: AppTheme.theme,
+      initialRoute: '/',
+      onGenerateRoute: AppRouter.generateRoute,
+      routes: {
+        '/profile': (context) => const ProfilePage(),
+      },
     );
   }
 }

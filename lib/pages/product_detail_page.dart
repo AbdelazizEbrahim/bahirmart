@@ -327,6 +327,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                             ),
                             const SizedBox(height: 16),
 
+                            // Weight Information for PERKM delivery
+                            if (widget.product.delivery == 'PERKM') ...[
+                              const SizedBox(height: 16),
+                              _buildWeightInput(),
+                            ],
+
                             // Stock Info
                             _buildInfoCard(
                               'Stock Information',
@@ -748,6 +754,48 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           Text(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeightInput() {
+    if (widget.product.delivery != 'PERKM') return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Weight Information',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.scale, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                'Weight: ',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text('${widget.product.kilogramPerPrice ?? 1} kg'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Delivery cost will be calculated based on weight and distance',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+          ),
         ],
       ),
     );

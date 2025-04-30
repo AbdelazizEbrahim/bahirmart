@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bahirmart/components/app_bar.dart';
+import 'package:bahirmart/components/bottom_navigation_bar.dart';
 import 'package:bahirmart/core/models/auction_model.dart';
 import 'package:bahirmart/pages/auction_detail_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -355,6 +356,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
           ),
         ],
       ),
+      bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 2),
     );
   }
 

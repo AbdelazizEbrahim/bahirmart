@@ -67,13 +67,10 @@ class Product {
       case 'PERPIECE':
         return deliveryPrice * quantity;
       case 'PERKG':
-        // For PERKG, multiply delivery price by quantity and weight (assuming 1kg per item if not specified)
         return deliveryPrice * quantity * 1; // Default 1kg per item
       case 'PERKM':
-        // For PERKM, use default 20KM distance and multiply by quantity
         return deliveryPrice * quantity * 20; // Default 20KM
       case 'FLAT':
-        // For FLAT, return the same delivery price regardless of quantity
         return deliveryPrice;
       case 'FREE':
         return 0;
@@ -82,10 +79,8 @@ class Product {
     }
   }
 
-  // Helper method to check if there's an active offer
   bool get hasActiveOffer => offer != null && offer!.isActive;
 
-  // Helper method to get the discount percentage
   double get discountPercentage {
     if (hasActiveOffer) {
       return ((price - offer!.price) / price) * 100;
@@ -93,7 +88,6 @@ class Product {
     return 0;
   }
   
-  // Convert Product to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,

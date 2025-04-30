@@ -1,3 +1,5 @@
+import 'package:bahirmart/pages/orders_page.dart';
+import 'package:bahirmart/pages/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:bahirmart/pages/landing_page.dart';
 import 'package:bahirmart/pages/products_page.dart';
@@ -15,11 +17,13 @@ class AppRouter {
         return MaterialPageRoute(
             builder: (_) => const Scaffold(body: Center(child: Text('Notifications Page'))));
       case '/profile':
-        return MaterialPageRoute(
-            builder: (_) => const Scaffold(body: Center(child: Text('Profile Page'))));
-      case '/orders':
-        return MaterialPageRoute(
-            builder: (_) => const Scaffold(body: Center(child: Text('Orders Page'))));
+      return MaterialPageRoute(
+        builder: (_) => const ProfilePage(), // Replace with your actual ProfilePage widget
+      );
+    case '/orders':
+      return MaterialPageRoute(
+        builder: (_) => const OrdersPage(), // Use the OrdersPage widget
+      );
       case '/settings':
         return MaterialPageRoute(
             builder: (_) => const Scaffold(body: Center(child: Text('Settings Page'))));
