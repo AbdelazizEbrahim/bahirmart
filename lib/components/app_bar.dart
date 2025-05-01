@@ -19,40 +19,40 @@ class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     // Default actions (notifications and user menu)
     final List<Widget> defaultActions = [
-      Stack(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
-            },
-          ),
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
-              child: const Text(
-                '5',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
+      if (userProvider.user != null) ...[
+        Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              onPressed: () {
+                Navigator.pushNamed(context, '/notifications');
+              },
+            ),
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                textAlign: TextAlign.center,
+                constraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                child: const Text(
+                  '5',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      if (userProvider.user != null)
+          ],
+        ),
         PopupMenuButton<String>(
           icon: CircleAvatar(
             backgroundImage: userProvider.user!.image.isNotEmpty
@@ -72,7 +72,7 @@ class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
                 break;
               case 'logout':
                 Provider.of<UserProvider>(context, listen: false).setUser(null);
-                Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushReplacementNamed(context, '/');
                 break;
             }
           },
@@ -83,6 +83,26 @@ class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
             const PopupMenuItem(value: 'logout', child: Text('Logout')),
           ],
         ),
+      ] else ...[
+        TextButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/signin');
+          },
+          child: const Text(
+            'Sign In',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/signup');
+          },
+          child: const Text(
+            'Sign Up',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
     ];
 
     // Combine custom actions with default actions
