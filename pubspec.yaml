@@ -1,6 +1,6 @@
 name: bahirmart
 description: A Flutter mobile app for BahirMart
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -19,6 +19,10 @@ dependencies:
   intl: ^0.18.1
   shared_preferences: ^2.5.3
   url_launcher: ^6.2.5
+  firebase_core: ^2.24.2
+  firebase_storage: ^11.6.0
+  image_picker: ^1.0.4
+  country_state_city_picker: ^1.2.8
 
 dev_dependencies:
   flutter_test:
