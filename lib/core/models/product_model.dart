@@ -7,19 +7,17 @@ class Product {
   final int quantity;
   final int soldQuantity;
   final String description;
-  final List<String> images;
-  final List<String> variant;
-  final List<String> size;
-  final String brand;
+  final List<String>? images;
+  final List<String>? variant;
+  final List<String>? size;
+  final String? brand;
   final Location location;
-  final List<Review> review;
+  final List<Review>? review;
   final String delivery;
   final double deliveryPrice;
   final double? kilogramPerPrice;
   final double? kilometerPerPrice;
   final bool isBanned;
-  final BanReason? banReason;
-  final DateTime? bannedAt;
   final bool isDeleted;
   final DateTime? trashDate;
   final DateTime createdAt;
@@ -32,22 +30,20 @@ class Product {
     required this.category,
     required this.price,
     required this.quantity,
-    required this.soldQuantity,
+    this.soldQuantity = 0,
     required this.description,
-    required this.images,
-    required this.variant,
-    required this.size,
-    required this.brand,
+    this.images,
+    this.variant,
+    this.size,
+    this.brand = 'Hand Made',
     required this.location,
-    required this.review,
+    this.review,
     required this.delivery,
     required this.deliveryPrice,
     this.kilogramPerPrice,
     this.kilometerPerPrice,
-    required this.isBanned,
-    this.banReason,
-    this.bannedAt,
-    required this.isDeleted,
+    this.isBanned = false,
+    this.isDeleted = false,
     this.trashDate,
     required this.createdAt,
     this.offer,
@@ -67,11 +63,9 @@ class Product {
       case 'PERPIECE':
         return deliveryPrice * quantity;
       case 'PERKG':
-        return deliveryPrice * quantity * 1; // Default 1kg per item
+        return deliveryPrice * quantity * (kilogramPerPrice ?? 1);
       case 'PERKM':
-        return deliveryPrice * quantity * 20; // Default 20KM
-      case 'FLAT':
-        return deliveryPrice;
+        return deliveryPrice * quantity * (kilometerPerPrice ?? 20);
       case 'FREE':
         return 0;
       default:
@@ -87,7 +81,7 @@ class Product {
     }
     return 0;
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -103,47 +97,46 @@ class Product {
       'size': size,
       'brand': brand,
       'location': location.toJson(),
-      'review': review.map((r) => r.toJson()).toList(),
+      'review': review?.map((r) => r.toJson()).toList(),
       'delivery': delivery,
       'deliveryPrice': deliveryPrice,
       'kilogramPerPrice': kilogramPerPrice,
       'kilometerPerPrice': kilometerPerPrice,
       'isBanned': isBanned,
-      'banReason': banReason?.toJson(),
-      'bannedAt': bannedAt?.toIso8601String(),
       'isDeleted': isDeleted,
       'trashDate': trashDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'offer': offer?.toJson(),
     };
   }
-  
-  // Create Product from JSON
+
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'],
+      id: json['_id'] ?? json['id'],
       merchantDetail: MerchantDetail.fromJson(json['merchantDetail']),
       productName: json['productName'],
       category: ProductCategory.fromJson(json['category']),
       price: json['price'].toDouble(),
       quantity: json['quantity'],
-      soldQuantity: json['soldQuantity'],
+      soldQuantity: json['soldQuantity'] ?? 0,
       description: json['description'],
-      images: List<String>.from(json['images']),
-      variant: List<String>.from(json['variant']),
-      size: List<String>.from(json['size']),
-      brand: json['brand'],
+      images: json['images'] != null ? List<String>.from(json['images']) : null,
+      variant:
+          json['variant'] != null ? List<String>.from(json['variant']) : null,
+      size: json['size'] != null ? List<String>.from(json['size']) : null,
+      brand: json['brand'] ?? 'Hand Made',
       location: Location.fromJson(json['location']),
-      review: (json['review'] as List).map((r) => Review.fromJson(r)).toList(),
+      review: json['review'] != null
+          ? (json['review'] as List).map((r) => Review.fromJson(r)).toList()
+          : null,
       delivery: json['delivery'],
       deliveryPrice: json['deliveryPrice'].toDouble(),
       kilogramPerPrice: json['kilogramPerPrice']?.toDouble(),
       kilometerPerPrice: json['kilometerPerPrice']?.toDouble(),
-      isBanned: json['isBanned'],
-      banReason: json['banReason'] != null ? BanReason.fromJson(json['banReason']) : null,
-      bannedAt: json['bannedAt'] != null ? DateTime.parse(json['bannedAt']) : null,
-      isDeleted: json['isDeleted'],
-      trashDate: json['trashDate'] != null ? DateTime.parse(json['trashDate']) : null,
+      isBanned: json['isBanned'] ?? false,
+      isDeleted: json['isDeleted'] ?? false,
+      trashDate:
+          json['trashDate'] != null ? DateTime.parse(json['trashDate']) : null,
       createdAt: DateTime.parse(json['createdAt']),
       offer: json['offer'] != null ? Offer.fromJson(json['offer']) : null,
     );
@@ -160,20 +153,20 @@ class Offer {
     if (offerEndDate == null) return true;
     return DateTime.now().isBefore(offerEndDate!);
   }
-  
-  // Convert Offer to JSON
+
   Map<String, dynamic> toJson() {
     return {
       'price': price,
       'offerEndDate': offerEndDate?.toIso8601String(),
     };
   }
-  
-  // Create Offer from JSON
+
   factory Offer.fromJson(Map<String, dynamic> json) {
     return Offer(
       price: json['price'].toDouble(),
-      offerEndDate: json['offerEndDate'] != null ? DateTime.parse(json['offerEndDate']) : null,
+      offerEndDate: json['offerEndDate'] != null
+          ? DateTime.parse(json['offerEndDate'])
+          : null,
     );
   }
 }
@@ -183,16 +176,14 @@ class ProductCategory {
   final String categoryName;
 
   ProductCategory({required this.categoryId, required this.categoryName});
-  
-  // Convert ProductCategory to JSON
+
   Map<String, dynamic> toJson() {
     return {
       'categoryId': categoryId,
       'categoryName': categoryName,
     };
   }
-  
-  // Create ProductCategory from JSON
+
   factory ProductCategory.fromJson(Map<String, dynamic> json) {
     return ProductCategory(
       categoryId: json['categoryId'],
@@ -213,8 +204,7 @@ class Review {
     required this.rating,
     required this.createdDate,
   });
-  
-  // Convert Review to JSON
+
   Map<String, dynamic> toJson() {
     return {
       'customerId': customerId,
@@ -223,37 +213,13 @@ class Review {
       'createdDate': createdDate.toIso8601String(),
     };
   }
-  
-  // Create Review from JSON
+
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
       customerId: json['customerId'],
       comment: json['comment'],
       rating: json['rating'],
       createdDate: DateTime.parse(json['createdDate']),
-    );
-  }
-}
-
-class BanReason {
-  final String reason;
-  final String description;
-
-  BanReason({required this.reason, required this.description});
-  
-  // Convert BanReason to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'reason': reason,
-      'description': description,
-    };
-  }
-  
-  // Create BanReason from JSON
-  factory BanReason.fromJson(Map<String, dynamic> json) {
-    return BanReason(
-      reason: json['reason'],
-      description: json['description'],
     );
   }
 }
@@ -268,8 +234,7 @@ class MerchantDetail {
     required this.merchantName,
     required this.merchantEmail,
   });
-  
-  // Convert MerchantDetail to JSON
+
   Map<String, dynamic> toJson() {
     return {
       'merchantId': merchantId,
@@ -277,8 +242,7 @@ class MerchantDetail {
       'merchantEmail': merchantEmail,
     };
   }
-  
-  // Create MerchantDetail from JSON
+
   factory MerchantDetail.fromJson(Map<String, dynamic> json) {
     return MerchantDetail(
       merchantId: json['merchantId'],
@@ -292,20 +256,18 @@ class Location {
   final String type;
   final List<double> coordinates;
 
-  Location({required this.type, required this.coordinates});
-  
-  // Convert Location to JSON
+  Location({this.type = 'Point', required this.coordinates});
+
   Map<String, dynamic> toJson() {
     return {
       'type': type,
       'coordinates': coordinates,
     };
   }
-  
-  // Create Location from JSON
+
   factory Location.fromJson(Map<String, dynamic> json) {
     return Location(
-      type: json['type'],
+      type: json['type'] ?? 'Point',
       coordinates: List<double>.from(json['coordinates']),
     );
   }

@@ -10,7 +10,8 @@ import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/ad_model.dart' as ad_model;
 import 'package:bahirmart/core/models/category_model.dart' as cat;
 import 'package:bahirmart/core/models/product_model.dart' as prod_model;
-import 'package:carousel_slider/carousel_slider.dart' as carousel hide CarouselController;
+import 'package:carousel_slider/carousel_slider.dart' as carousel
+    hide CarouselController;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -161,7 +162,8 @@ class _ProductsPageState extends State<ProductsPage> {
     setState(() {
       _filteredProducts = _products.where((product) {
         // Category filter
-        if (_selectedCategoryId != null && product.category.categoryId != _selectedCategoryId) {
+        if (_selectedCategoryId != null &&
+            product.category.categoryId != _selectedCategoryId) {
           return false;
         }
 
@@ -175,25 +177,30 @@ class _ProductsPageState extends State<ProductsPage> {
         }
 
         // Price range filter
-        if (product.price < _priceRange.start || product.price > _priceRange.end) {
+        if (product.price < _priceRange.start ||
+            product.price > _priceRange.end) {
           return false;
         }
 
         // Rating filter
-        if (product.review.isNotEmpty) {
-          final avgRating = product.review.map((r) => r.rating).reduce((a, b) => a + b) / product.review.length;
+        if (product.review!.isNotEmpty) {
+          final avgRating =
+              product.review!.map((r) => r.rating).reduce((a, b) => a + b) /
+                  product.review!.length;
           if (avgRating < _ratingRange.start || avgRating > _ratingRange.end) {
             return false;
           }
         }
 
         // Quantity filter
-        if (product.quantity < _quantityRange.start || product.quantity > _quantityRange.end) {
+        if (product.quantity < _quantityRange.start ||
+            product.quantity > _quantityRange.end) {
           return false;
         }
 
         // Delivery type filter
-        if (_selectedDeliveryType != null && product.delivery != _selectedDeliveryType) {
+        if (_selectedDeliveryType != null &&
+            product.delivery != _selectedDeliveryType) {
           return false;
         }
 
@@ -224,7 +231,8 @@ class _ProductsPageState extends State<ProductsPage> {
             // Category Filter
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('Category',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             SizedBox(
               height: 40,
@@ -254,11 +262,13 @@ class _ProductsPageState extends State<ProductsPage> {
             // Delivery Type Filter
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: Text('Delivery Type', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('Delivery Type',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             Wrap(
               spacing: 8.0,
-              children: ['FLAT', 'PERPIECE', 'PERKG', 'FREE', 'PERKM'].map((type) {
+              children:
+                  ['FLAT', 'PERPIECE', 'PERKG', 'FREE', 'PERKM'].map((type) {
                 return ChoiceChip(
                   label: Text(type),
                   selected: _selectedDeliveryType == type,
@@ -276,7 +286,8 @@ class _ProductsPageState extends State<ProductsPage> {
             // Price Range Filter
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: Text('Price Range', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('Price Range',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             RangeSlider(
               values: _priceRange,
@@ -299,7 +310,8 @@ class _ProductsPageState extends State<ProductsPage> {
             // Rating Range Filter
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: Text('Rating Range', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('Rating Range',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             RangeSlider(
               values: _ratingRange,
@@ -322,7 +334,8 @@ class _ProductsPageState extends State<ProductsPage> {
             // Quantity Range Filter
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: Text('Quantity Range', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('Quantity Range',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             RangeSlider(
               values: _quantityRange,
@@ -356,9 +369,11 @@ class _ProductsPageState extends State<ProductsPage> {
   // Mock Data Generation
   List<ad_model.Ad> _generateMockAds() {
     final categories = [
-      prod_model.ProductCategory(categoryId: 'cat_1', categoryName: 'Electronics'),
+      prod_model.ProductCategory(
+          categoryId: 'cat_1', categoryName: 'Electronics'),
       prod_model.ProductCategory(categoryId: 'cat_2', categoryName: 'Fashion'),
-      prod_model.ProductCategory(categoryId: 'cat_3', categoryName: 'Home & Garden'),
+      prod_model.ProductCategory(
+          categoryId: 'cat_3', categoryName: 'Home & Garden'),
       prod_model.ProductCategory(categoryId: 'cat_4', categoryName: 'Sports'),
       prod_model.ProductCategory(categoryId: 'cat_5', categoryName: 'Books'),
     ];
@@ -367,21 +382,29 @@ class _ProductsPageState extends State<ProductsPage> {
       // Determine if this product has an offer (all ads have offers)
       final offerPrice = 699.99 - (index * 50);
       final offerEndDate = DateTime.now().add(Duration(days: 7 - index));
-      
+
       // Set delivery-specific prices
       final deliveryTypes = ['FLAT', 'PERPIECE', 'PERKG', 'FREE', 'PERKM'];
       final deliveryType = deliveryTypes[index % deliveryTypes.length];
       final deliveryPrice = 5.99 + (index % 3);
-      final kilogramPerPrice = deliveryType == 'PERKG' ? 3.99 + (index % 3) : null;
-      final kilometerPerPrice = deliveryType == 'PERKM' ? 2.99 + (index % 3) : null;
-      
+      final kilogramPerPrice =
+          deliveryType == 'PERKG' ? 3.99 + (index % 3) : null;
+      final kilometerPerPrice =
+          deliveryType == 'PERKM' ? 2.99 + (index % 3) : null;
+
       return ad_model.Ad(
         id: 'ad_${index + 1}',
         product: prod_model.Product(
           id: 'product_ad_${index + 1}',
           merchantDetail: prod_model.MerchantDetail(
             merchantId: 'merchant_${index + 1}',
-            merchantName: ['TechTrend', 'StyleHub', 'HomeHaven', 'SportZone', 'BookNook'][index],
+            merchantName: [
+              'TechTrend',
+              'StyleHub',
+              'HomeHaven',
+              'SportZone',
+              'BookNook'
+            ][index],
             merchantEmail: 'merchant${index + 1}@bahirmart.com',
           ),
           productName: [
@@ -395,12 +418,30 @@ class _ProductsPageState extends State<ProductsPage> {
           price: [699.99, 149.99, 29.99, 89.99, 39.99][index],
           quantity: 50,
           soldQuantity: (index + 1) * 10,
-          description: 'Premium ${['smartphone with 5G', 'jacket with modern fit', 'planter for indoor plants', 'racket for professionals', 'collection of bestselling novels'][index]}.',
+          description: 'Premium ${[
+            'smartphone with 5G',
+            'jacket with modern fit',
+            'planter for indoor plants',
+            'racket for professionals',
+            'collection of bestselling novels'
+          ][index]}.',
           images: ['https://picsum.photos/300/200?random=${index + 1}'],
-          variant: ['Color: ${['Black', 'Brown', 'White', 'Red', 'Blue'][index]}'],
-          size: ['${['128GB', 'M', 'Small', 'Standard', 'Hardcover'][index]}'],
-          brand: ['TechBrand', 'StyleCo', 'HomeCraft', 'SportPro', 'LitPress'][index],
-          location: prod_model.Location(type: 'Point', coordinates: [38.8951 + index * 0.01, -77.0364 + index * 0.01]),
+          variant: [
+            'Color: ${['Black', 'Brown', 'White', 'Red', 'Blue'][index]}'
+          ],
+          size: [
+            '${['128GB', 'M', 'Small', 'Standard', 'Hardcover'][index]}'
+          ],
+          brand: [
+            'TechBrand',
+            'StyleCo',
+            'HomeCraft',
+            'SportPro',
+            'LitPress'
+          ][index],
+          location: prod_model.Location(
+              type: 'Point',
+              coordinates: [38.8951 + index * 0.01, -77.0364 + index * 0.01]),
           review: [
             prod_model.Review(
               customerId: 'cust_${index + 1}',
@@ -423,7 +464,13 @@ class _ProductsPageState extends State<ProductsPage> {
         ),
         merchantDetail: ad_model.MerchantDetail(
           merchantId: 'merchant_${index + 1}',
-          merchantName: ['TechTrend', 'StyleHub', 'HomeHaven', 'SportZone', 'BookNook'][index],
+          merchantName: [
+            'TechTrend',
+            'StyleHub',
+            'HomeHaven',
+            'SportZone',
+            'BookNook'
+          ][index],
           merchantEmail: 'merchant${index + 1}@bahirmart.com',
         ),
         startsAt: DateTime.now().subtract(Duration(days: index)),
@@ -435,16 +482,20 @@ class _ProductsPageState extends State<ProductsPage> {
         isActive: true,
         isHome: true,
         adRegion: 'Region ${index + 1}',
-        location: ad_model.Location(type: 'Point', coordinates: [38.8951 + index * 0.01, -77.0364 + index * 0.01]),
+        location: ad_model.Location(
+            type: 'Point',
+            coordinates: [38.8951 + index * 0.01, -77.0364 + index * 0.01]),
       );
     });
   }
 
   List<prod_model.Product> _generateMockProducts() {
     final categories = [
-      prod_model.ProductCategory(categoryId: 'cat_1', categoryName: 'Electronics'),
+      prod_model.ProductCategory(
+          categoryId: 'cat_1', categoryName: 'Electronics'),
       prod_model.ProductCategory(categoryId: 'cat_2', categoryName: 'Fashion'),
-      prod_model.ProductCategory(categoryId: 'cat_3', categoryName: 'Home & Garden'),
+      prod_model.ProductCategory(
+          categoryId: 'cat_3', categoryName: 'Home & Garden'),
       prod_model.ProductCategory(categoryId: 'cat_4', categoryName: 'Sports'),
       prod_model.ProductCategory(categoryId: 'cat_5', categoryName: 'Books'),
     ];
@@ -453,22 +504,31 @@ class _ProductsPageState extends State<ProductsPage> {
       final catIndex = index % 5;
       final deliveryTypes = ['FLAT', 'PERPIECE', 'PERKG', 'FREE', 'PERKM'];
       final deliveryType = deliveryTypes[index % deliveryTypes.length];
-      
+
       // Determine if this product has an offer (about 30% of products)
       final hasOffer = index % 3 == 0;
       final offerPrice = hasOffer ? 19.99 + index * 5 : null;
-      final offerEndDate = hasOffer ? DateTime.now().add(Duration(days: 7 + index % 14)) : null;
-      
+      final offerEndDate =
+          hasOffer ? DateTime.now().add(Duration(days: 7 + index % 14)) : null;
+
       // Set delivery-specific prices
       final deliveryPrice = 4.99 + (index % 3);
-      final kilogramPerPrice = deliveryType == 'PERKG' ? 2.99 + (index % 3) : null;
-      final kilometerPerPrice = deliveryType == 'PERKM' ? 1.99 + (index % 3) : null;
-      
+      final kilogramPerPrice =
+          deliveryType == 'PERKG' ? 2.99 + (index % 3) : null;
+      final kilometerPerPrice =
+          deliveryType == 'PERKM' ? 1.99 + (index % 3) : null;
+
       return prod_model.Product(
         id: 'product_${index + 1}',
         merchantDetail: prod_model.MerchantDetail(
           merchantId: 'merchant_${catIndex + 1}',
-          merchantName: ['TechTrend', 'StyleHub', 'HomeHaven', 'SportZone', 'BookNook'][catIndex],
+          merchantName: [
+            'TechTrend',
+            'StyleHub',
+            'HomeHaven',
+            'SportZone',
+            'BookNook'
+          ][catIndex],
           merchantEmail: 'merchant${catIndex + 1}@bahirmart.com',
         ),
         productName: [
@@ -497,19 +557,53 @@ class _ProductsPageState extends State<ProductsPage> {
         price: 19.99 + index * 10,
         quantity: 100 - index * 2,
         soldQuantity: index * 5,
-        description: 'High-quality ${['earbuds with noise cancellation', 'jeans with slim fit', 'table with minimalist design', 'mat for yoga enthusiasts', 'novel with rich storytelling', 'watch with fitness tracking', 'scarf with elegant design', 'tools for gardening', 'ball for soccer matches', 'recipes for home cooking', 'speaker with deep bass', 'sneakers for daily wear', 'lamp for cozy ambiance', 'tracker for workouts', 'novel with suspenseful plot', 'stand for ergonomic setup', 'sunglasses with UV protection', 'plant for home decor', 'goggles for swimming', 'poetry with deep emotions'][index % 20]}.',
+        description: 'High-quality ${[
+          'earbuds with noise cancellation',
+          'jeans with slim fit',
+          'table with minimalist design',
+          'mat for yoga enthusiasts',
+          'novel with rich storytelling',
+          'watch with fitness tracking',
+          'scarf with elegant design',
+          'tools for gardening',
+          'ball for soccer matches',
+          'recipes for home cooking',
+          'speaker with deep bass',
+          'sneakers for daily wear',
+          'lamp for cozy ambiance',
+          'tracker for workouts',
+          'novel with suspenseful plot',
+          'stand for ergonomic setup',
+          'sunglasses with UV protection',
+          'plant for home decor',
+          'goggles for swimming',
+          'poetry with deep emotions'
+        ][index % 20]}.',
         images: ['https://picsum.photos/150/150?random=${index + 1}'],
-        variant: ['Color: ${['Blue', 'Black', 'Brown', 'Green', 'Red'][catIndex]}'],
-        size: ['${['Standard', 'L', 'Medium', 'One Size', 'Paperback'][catIndex]}'],
-        brand: ['TechBrand', 'StyleCo', 'HomeCraft', 'SportPro', 'LitPress'][catIndex],
-        location: prod_model.Location(type: 'Point', coordinates: [38.8951 + index * 0.005, -77.0364 + index * 0.005]),
+        variant: [
+          'Color: ${['Blue', 'Black', 'Brown', 'Green', 'Red'][catIndex]}'
+        ],
+        size: [
+          '${['Standard', 'L', 'Medium', 'One Size', 'Paperback'][catIndex]}'
+        ],
+        brand: [
+          'TechBrand',
+          'StyleCo',
+          'HomeCraft',
+          'SportPro',
+          'LitPress'
+        ][catIndex],
+        location: prod_model.Location(
+            type: 'Point',
+            coordinates: [38.8951 + index * 0.005, -77.0364 + index * 0.005]),
         review: List.generate(
           3,
           (reviewIndex) => prod_model.Review(
             customerId: 'cust_${index}_${reviewIndex}',
             comment: 'Great product!',
             rating: 3 + (index + reviewIndex) % 3,
-            createdDate: DateTime.now().subtract(Duration(days: index + reviewIndex)),
+            createdDate:
+                DateTime.now().subtract(Duration(days: index + reviewIndex)),
           ),
         ),
         delivery: deliveryType,
@@ -519,10 +613,12 @@ class _ProductsPageState extends State<ProductsPage> {
         isBanned: false,
         isDeleted: false,
         createdAt: DateTime.now().subtract(Duration(days: index)),
-        offer: hasOffer ? prod_model.Offer(
-          price: offerPrice!,
-          offerEndDate: offerEndDate,
-        ) : null,
+        offer: hasOffer
+            ? prod_model.Offer(
+                price: offerPrice!,
+                offerEndDate: offerEndDate,
+              )
+            : null,
       );
     });
   }
@@ -615,7 +711,8 @@ class _ProductsPageState extends State<ProductsPage> {
                   height: 50,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.paddingMedium),
                     itemCount: _categories.length,
                     itemBuilder: (context, index) {
                       final category = _categories[index];
@@ -624,7 +721,10 @@ class _ProductsPageState extends State<ProductsPage> {
                         child: TextButton(
                           onPressed: () {
                             setState(() {
-                              _selectedCategoryId = _selectedCategoryId == category.id ? null : category.id;
+                              _selectedCategoryId =
+                                  _selectedCategoryId == category.id
+                                      ? null
+                                      : category.id;
                               _applyFilters();
                             });
                           },
@@ -647,7 +747,8 @@ class _ProductsPageState extends State<ProductsPage> {
 
                 // Filter Toggle Button
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.paddingMedium),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -661,8 +762,11 @@ class _ProductsPageState extends State<ProductsPage> {
                             _isFilterOpen = !_isFilterOpen;
                           });
                         },
-                        icon: Icon(_isFilterOpen ? Icons.filter_list_off : Icons.filter_list),
-                        label: Text(_isFilterOpen ? 'Hide Filters' : 'Show Filters'),
+                        icon: Icon(_isFilterOpen
+                            ? Icons.filter_list_off
+                            : Icons.filter_list),
+                        label: Text(
+                            _isFilterOpen ? 'Hide Filters' : 'Show Filters'),
                       ),
                     ],
                   ),
@@ -680,7 +784,8 @@ class _ProductsPageState extends State<ProductsPage> {
                         // Ads Carousel
                         if (_ads.isNotEmpty)
                           Padding(
-                            padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                            padding:
+                                const EdgeInsets.all(AppSizes.paddingMedium),
                             child: carousel.CarouselSlider(
                               options: carousel.CarouselOptions(
                                 autoPlay: true,
@@ -699,7 +804,8 @@ class _ProductsPageState extends State<ProductsPage> {
                           padding: const EdgeInsets.all(AppSizes.paddingMedium),
                           child: _filteredProducts.isEmpty
                               ? const Center(
-                                  child: Text('No products found matching your criteria'),
+                                  child: Text(
+                                      'No products found matching your criteria'),
                                 )
                               : MasonryGridView.count(
                                   shrinkWrap: true,
@@ -709,7 +815,8 @@ class _ProductsPageState extends State<ProductsPage> {
                                   crossAxisSpacing: 16,
                                   itemCount: _filteredProducts.length,
                                   itemBuilder: (context, index) {
-                                    return ProductCard(product: _filteredProducts[index]);
+                                    return ProductCard(
+                                        product: _filteredProducts[index]);
                                   },
                                 ),
                         ),

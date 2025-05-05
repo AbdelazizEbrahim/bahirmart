@@ -5,7 +5,8 @@ import 'package:bahirmart/components/bottom_navigation_bar.dart';
 import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/product_model.dart' as prod_model;
-import 'package:carousel_slider/carousel_slider.dart' as carousel hide CarouselController;
+import 'package:carousel_slider/carousel_slider.dart' as carousel
+    hide CarouselController;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:bahirmart/main.dart';
@@ -20,7 +21,8 @@ class ProductDetailPage extends StatefulWidget {
   _ProductDetailPageState createState() => _ProductDetailPageState();
 }
 
-class _ProductDetailPageState extends State<ProductDetailPage> with SingleTickerProviderStateMixin {
+class _ProductDetailPageState extends State<ProductDetailPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _reviewController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -53,7 +55,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
     final user = Provider.of<UserProvider>(context, listen: false).user;
     if (user != null) {
       setState(() {
-        _hasUserReviewed = widget.product.review.any((review) => review.customerId == user.id);
+        _hasUserReviewed =
+            widget.product.review!.any((review) => review.customerId == user.id);
       });
     }
   }
@@ -110,7 +113,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
 
       // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
-      
+
       setState(() {
         _isSubmitting = false;
         _reviewController.clear();
@@ -139,7 +142,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat =
+        NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     final dateFormat = DateFormat('MMM d, yyyy');
     final user = Provider.of<UserProvider>(context).user;
 
@@ -157,7 +161,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Image Carousel
-                      if (widget.product.images.isNotEmpty)
+                      if (widget.product.images!.isNotEmpty)
                         carousel.CarouselSlider(
                           options: carousel.CarouselOptions(
                             height: 300,
@@ -166,7 +170,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                             autoPlayInterval: const Duration(seconds: 3),
                             enlargeCenterPage: true,
                           ),
-                          items: widget.product.images.map((imageUrl) {
+                          items: widget.product.images?.map((imageUrl) {
                             return Hero(
                               tag: 'product_${widget.product.id}',
                               child: CachedNetworkImage(
@@ -175,7 +179,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                 placeholder: (context, url) => const Center(
                                   child: CircularProgressIndicator(),
                                 ),
-                                errorWidget: (context, url, error) => const Icon(Icons.error),
+                                errorWidget: (context, url, error) =>
+                                    const Icon(Icons.error),
                               ),
                             );
                           }).toList(),
@@ -201,9 +206,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                 Expanded(
                                   child: Text(
                                     widget.product.productName,
-                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                   ),
                                 ),
                                 Column(
@@ -211,34 +219,49 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                   children: [
                                     if (widget.product.hasActiveOffer)
                                       Text(
-                                        currencyFormat.format(widget.product.price),
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          decoration: TextDecoration.lineThrough,
-                                          color: Colors.grey,
-                                        ),
+                                        currencyFormat
+                                            .format(widget.product.price),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              decoration:
+                                                  TextDecoration.lineThrough,
+                                              color: Colors.grey,
+                                            ),
                                       ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                        color: Theme.of(context)
+                                            .primaryColor
+                                            .withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        currencyFormat.format(widget.product.currentPrice),
-                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          color: Theme.of(context).primaryColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        currencyFormat.format(
+                                            widget.product.currentPrice),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .primaryColor,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                       ),
                                     ),
                                     if (widget.product.hasActiveOffer)
                                       Padding(
                                         padding: const EdgeInsets.only(top: 4),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: Colors.red,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Text(
                                             '${widget.product.discountPercentage.toStringAsFixed(0)}% OFF',
@@ -269,17 +292,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'Sold by',
-                                          style: Theme.of(context).textTheme.bodySmall,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
                                         ),
                                         Text(
-                                          widget.product.merchantDetail.merchantName,
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          widget.product.merchantDetail
+                                              .merchantName,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -295,14 +325,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                 Expanded(
                                   child: _buildInfoChip(
                                     Icons.category,
-                                    widget.product.category.categoryName,
+                                    widget.product.category?.categoryName ??
+                                        'No Category',
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: _buildInfoChip(
                                     Icons.branding_watermark,
-                                    widget.product.brand,
+                                    widget.product.brand ?? 'Unknown Brand',
                                   ),
                                 ),
                               ],
@@ -320,7 +351,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                 ),
                                 _buildInfoRow(
                                   'Price',
-                                  currencyFormat.format(widget.product.deliveryPrice),
+                                  currencyFormat
+                                      .format(widget.product.deliveryPrice),
                                   Icons.attach_money,
                                 ),
                               ],
@@ -367,7 +399,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                             const SizedBox(height: 16),
 
                             // Variants and Sizes
-                            if (widget.product.variant.isNotEmpty) ...[
+                            if (widget.product.variant!.isNotEmpty) ...[
                               _buildSectionTitle('Variants'),
                               Container(
                                 padding: const EdgeInsets.all(16),
@@ -378,10 +410,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                 child: Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: widget.product.variant
+                                  children: widget.product.variant!
                                       .map((variant) => Chip(
                                             label: Text(variant),
-                                            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                                            backgroundColor: Theme.of(context)
+                                                .primaryColor
+                                                .withOpacity(0.1),
                                           ))
                                       .toList(),
                                 ),
@@ -389,7 +423,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                               const SizedBox(height: 16),
                             ],
 
-                            if (widget.product.size.isNotEmpty) ...[
+                            if (widget.product.size!.isNotEmpty) ...[
                               _buildSectionTitle('Sizes'),
                               Container(
                                 padding: const EdgeInsets.all(16),
@@ -400,10 +434,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                 child: Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: widget.product.size
+                                  children: widget.product.size!
                                       .map((size) => Chip(
                                             label: Text(size),
-                                            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                                            backgroundColor: Theme.of(context)
+                                                .primaryColor
+                                                .withOpacity(0.1),
                                           ))
                                       .toList(),
                                 ),
@@ -413,7 +449,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
 
                             // Reviews Section
                             _buildSectionTitle('Reviews'),
-                            if (widget.product.review.isNotEmpty)
+                            if (widget.product.review!.isNotEmpty)
                               Column(
                                 children: [
                                   // Average Rating
@@ -426,26 +462,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                     child: Row(
                                       children: [
                                         Text(
-                                          (widget.product.review.map((r) => r.rating).reduce((a, b) => a + b) /
-                                                  widget.product.review.length)
+                                          (widget.product.review
+                                                      !.map((r) => r.rating)
+                                                      .reduce((a, b) => a + b) /
+                                                  widget.product.review!.length)
                                               .toStringAsFixed(1),
-                                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium
+                                              ?.copyWith(
                                                 fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).primaryColor,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
                                               ),
                                         ),
                                         const SizedBox(width: 16),
                                         Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             _buildRatingStars(
-                                              widget.product.review.map((r) => r.rating).reduce((a, b) => a + b) /
-                                                  widget.product.review.length,
+                                              widget.product.review!
+                                                      .map((r) => r.rating)
+                                                      .reduce((a, b) => a + b) /
+                                                  widget.product.review!.length,
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              '${widget.product.review.length} reviews',
-                                              style: Theme.of(context).textTheme.bodyMedium,
+                                              '${widget.product.review?.length} reviews',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium,
                                             ),
                                           ],
                                         ),
@@ -457,34 +504,47 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                   // Review List
                                   ListView.builder(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    itemCount: widget.product.review.length,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: widget.product.review?.length,
                                     itemBuilder: (context, index) {
-                                      final review = widget.product.review[index];
+                                      final review =
+                                          widget.product.review?[index];
                                       return Card(
-                                        margin: const EdgeInsets.only(bottom: 8),
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         child: Padding(
                                           padding: const EdgeInsets.all(16),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
-                                                  _buildRatingStars(review.rating.toDouble()),
+                                                  _buildRatingStars(
+                                                      review!.rating.toDouble()),
                                                   Text(
-                                                    dateFormat.format(review.createdDate),
-                                                    style: Theme.of(context).textTheme.bodySmall,
+                                                    dateFormat.format(
+                                                        review.createdDate),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall,
                                                   ),
                                                 ],
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
                                                 review.comment,
-                                                style: Theme.of(context).textTheme.bodyMedium,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium,
                                               ),
                                             ],
                                           ),
@@ -500,7 +560,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                   padding: const EdgeInsets.all(16),
                                   child: Text(
                                     'Be the first to review this product!',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
                                           color: Colors.grey[600],
                                         ),
                                   ),
@@ -538,15 +601,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                           ),
                                         ),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: Theme.of(context)
+                                                .primaryColor
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Text(
                                             _rating.toStringAsFixed(1),
                                             style: TextStyle(
-                                              color: Theme.of(context).primaryColor,
+                                              color: Theme.of(context)
+                                                  .primaryColor,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -560,7 +628,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                       decoration: InputDecoration(
                                         hintText: 'Write your review here...',
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         filled: true,
                                         fillColor: Colors.white,
@@ -570,18 +639,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                     SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton(
-                                        onPressed: _isSubmitting ? null : _submitReview,
+                                        onPressed: _isSubmitting
+                                            ? null
+                                            : _submitReview,
                                         style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 16),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                         ),
                                         child: _isSubmitting
                                             ? const SizedBox(
                                                 height: 20,
                                                 width: 20,
-                                                child: CircularProgressIndicator(
+                                                child:
+                                                    CircularProgressIndicator(
                                                   strokeWidth: 2,
                                                 ),
                                               )
@@ -620,17 +694,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                   Expanded(
                     child: Consumer<CartService>(
                       builder: (context, cartService, child) {
-                        final isInCart = cartService.items.any((item) => item.product.id == widget.product.id);
-                        
+                        final isInCart = cartService.items.any(
+                            (item) => item.product.id == widget.product.id);
+
                         return ElevatedButton(
-                      onPressed: () {
+                          onPressed: () {
                             if (isInCart) {
                               Navigator.pushNamed(context, '/cart');
                             } else {
                               cartService.addItem(widget.product);
-                        ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('${widget.product.productName} added to cart'),
+                                  content: Text(
+                                      '${widget.product.productName} added to cart'),
                                   duration: const Duration(seconds: 2),
                                   action: SnackBarAction(
                                     label: 'View Cart',
@@ -638,16 +714,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                                       Navigator.pushNamed(context, '/cart');
                                     },
                                   ),
-                          ),
-                        );
+                                ),
+                              );
                             }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           child: Text(isInCart ? 'View Cart' : 'Add to Cart'),
                         );
                       },
@@ -658,9 +734,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> with SingleTicker
                     child: ElevatedButton(
                       onPressed: () {
                         // Add to cart and proceed to checkout
-                        final cartService = Provider.of<CartService>(context, listen: false);
+                        final cartService =
+                            Provider.of<CartService>(context, listen: false);
                         cartService.addItem(widget.product);
-                        
+
                         // Navigate to checkout
                         Navigator.pushNamed(context, '/checkout');
                       },

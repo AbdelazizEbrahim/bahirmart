@@ -5,18 +5,17 @@ import 'package:bahirmart/core/models/user_model.dart';
 import 'package:bahirmart/core/navigation/app_router.dart';
 import 'package:bahirmart/theme/app_theme.dart';
 import 'package:bahirmart/core/services/cart_service.dart';
-import 'package:bahirmart/pages/profile_page.dart';
-import 'package:bahirmart/pages/sign_in_page.dart';
-import 'package:bahirmart/pages/sign_up_page.dart';
-import 'package:bahirmart/pages/verify_otp_page.dart';
-import 'package:bahirmart/pages/landing_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  
+  // Request location permission
+  await _requestLocationPermission();
 
   final mockUser = User(
     id: 'user_1',
@@ -34,12 +33,44 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => CartService()),
         ChangeNotifierProvider(create: (_) => UserProvider()..setUser(mockUser)),
+        ChangeNotifierProvider(create: (_) => CartService()),
       ],
       child: const BahirMartApp(),
     ),
   );
+}
+
+Future<void> _requestLocationPermission() async {
+  final status = await Permission.location.request();
+  if (status.isDenied) {
+    // Defer showing dialog until the app is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showDialog(
+        context: navigatorKey.currentContext!,
+        builder: (context) => AlertDialog(
+          title: const Text('Location Permission Required'),
+          content: const Text(
+            'BahirMart needs access to your location to show you nearby products and merchants. '
+            'Please enable location access in your device settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await openAppSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+    });
+  }
 }
 
 class BahirMartApp extends StatelessWidget {
@@ -50,16 +81,10 @@ class BahirMartApp extends StatelessWidget {
     return MaterialApp(
       title: 'BahirMart',
       theme: AppTheme.theme,
+      themeMode: ThemeMode.system,
+      onGenerateRoute: AppRouter.generateRoute,
       navigatorKey: navigatorKey,
       initialRoute: '/',
-      onGenerateRoute: AppRouter.generateRoute,
-      routes: {
-        '/': (context) => const LandingPage(),
-        '/signin': (context) => const SignInPage(),
-        '/signup': (context) => const SignUpPage(),
-        '/verify-otp': (context) => const VerifyOtpPage(),
-        '/profile': (context) => const ProfilePage(),
-      },
     );
   }
 }
@@ -80,9 +105,9 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       appBar: BahirMartAppBar(title: 'BahirMart'),
-      body: const Center(
+      body: Center(
         child: Text('Welcome to BahirMart'),
       ),
     );
