@@ -82,22 +82,28 @@ class CartPage extends StatelessWidget {
                     final merchantId = merchantGroups.keys.elementAt(index);
                     final merchantItems = merchantGroups[merchantId]!;
                     final merchant = merchantItems.first.product.merchantDetail;
-                    
+
                     // Get merchant-specific totals
-                    final subtotal = cartService.getMerchantSubtotal(merchantId);
-                    final deliveryCost = cartService.getMerchantDeliveryCost(merchantId);
+                    final subtotal =
+                        cartService.getMerchantSubtotal(merchantId);
+                    final deliveryCost =
+                        cartService.getMerchantDeliveryCost(merchantId);
                     final total = cartService.getMerchantTotal(merchantId);
-                    
+
                     return Card(
-                      margin: const EdgeInsets.only(bottom: AppSizes.paddingMedium),
+                      margin:
+                          const EdgeInsets.only(bottom: AppSizes.paddingMedium),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Merchant header
                           Container(
-                            padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                            padding:
+                                const EdgeInsets.all(AppSizes.paddingMedium),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withOpacity(0.1),
+                              color: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.1),
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(8),
                               ),
@@ -105,7 +111,8 @@ class CartPage extends StatelessWidget {
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  backgroundColor: Theme.of(context).primaryColor,
+                                  backgroundColor:
+                                      Theme.of(context).primaryColor,
                                   child: Text(
                                     merchant.merchantName[0].toUpperCase(),
                                     style: const TextStyle(
@@ -117,17 +124,23 @@ class CartPage extends StatelessWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         merchant.merchantName,
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
                                               fontWeight: FontWeight.bold,
                                             ),
                                       ),
                                       Text(
                                         '${merchantItems.length} item${merchantItems.length > 1 ? 's' : ''}',
-                                        style: Theme.of(context).textTheme.bodySmall,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
                                       ),
                                     ],
                                   ),
@@ -135,7 +148,7 @@ class CartPage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          
+
                           // Products list
                           ListView.builder(
                             shrinkWrap: true,
@@ -146,10 +159,11 @@ class CartPage extends StatelessWidget {
                               return CartItemTile(item: item);
                             },
                           ),
-                          
+
                           // Merchant summary
                           Container(
-                            padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                            padding:
+                                const EdgeInsets.all(AppSizes.paddingMedium),
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
                               borderRadius: const BorderRadius.vertical(
@@ -159,47 +173,65 @@ class CartPage extends StatelessWidget {
                             child: Column(
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Subtotal',
-                                      style: Theme.of(context).textTheme.bodyMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
                                     ),
                                     Text(
                                       '\$${subtotal.toStringAsFixed(2)}',
-                                      style: Theme.of(context).textTheme.bodyMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Delivery',
-                                      style: Theme.of(context).textTheme.bodyMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
                                     ),
                                     Text(
                                       '\$${deliveryCost.toStringAsFixed(2)}',
-                                      style: Theme.of(context).textTheme.bodyMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
                                     ),
                                   ],
                                 ),
                                 const Divider(height: 16),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Total',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
                                             fontWeight: FontWeight.bold,
                                           ),
                                     ),
                                     Text(
                                       '\$${total.toStringAsFixed(2)}',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
                                             fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).primaryColor,
+                                            color:
+                                                Theme.of(context).primaryColor,
                                           ),
                                     ),
                                   ],
@@ -210,22 +242,30 @@ class CartPage extends StatelessWidget {
                                   child: ElevatedButton(
                                     onPressed: () async {
                                       // Get payment gateway URL
-                                      final paymentUrl = await _getPaymentGatewayUrl(merchantId, total);
-                                      
+                                      final paymentUrl =
+                                          await _getPaymentGatewayUrl(
+                                              merchantId, total);
+
                                       // Launch the payment URL
                                       if (paymentUrl != null) {
                                         final Uri uri = Uri.parse(paymentUrl);
                                         if (await canLaunchUrl(uri)) {
-                                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                          await launchUrl(uri,
+                                              mode: LaunchMode
+                                                  .externalApplication);
                                         } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Could not launch payment gateway')),
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    'Could not launch payment gateway')),
                                           );
                                         }
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
@@ -250,13 +290,14 @@ class CartPage extends StatelessWidget {
     );
   }
 
-  Future<String?> _getPaymentGatewayUrl(String merchantId, double amount) async {
+  Future<String?> _getPaymentGatewayUrl(
+      String merchantId, double amount) async {
     // This is a placeholder for the actual API call to get the payment gateway URL
     // In a real implementation, you would call your backend API to get the payment URL
     try {
       // Simulate API call delay
       await Future.delayed(const Duration(seconds: 1));
-      
+
       // For demonstration purposes, return a dummy URL
       // In a real app, this would come from your backend
       return 'https://payment-gateway.example.com/checkout?merchantId=$merchantId&amount=$amount';
@@ -271,7 +312,8 @@ class CartPage extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear Cart'),
-        content: const Text('Are you sure you want to remove all items from your cart?'),
+        content: const Text(
+            'Are you sure you want to remove all items from your cart?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -328,14 +370,18 @@ class CartItemTile extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProductDetailPage(product: item.product),
+                    builder: (context) =>
+                        ProductDetailPage(product: item.product),
                   ),
                 );
               },
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  item.product.images.isNotEmpty ? item.product.images[0] : 'https://via.placeholder.com/100',
+                  (item.product.images != null &&
+                          item.product.images!.isNotEmpty)
+                      ? item.product.images![0]
+                      : 'https://via.placeholder.com/100',
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
@@ -349,7 +395,7 @@ class CartItemTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            
+
             // Product details
             Expanded(
               child: Column(
@@ -364,20 +410,20 @@ class CartItemTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  
+
                   // Price
                   Row(
                     children: [
                       if (item.product.hasActiveOffer)
                         Text(
                           '\$${item.product.price.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                decoration: TextDecoration.lineThrough,
-                                color: Colors.grey,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey,
+                                  ),
                         ),
-                      if (item.product.hasActiveOffer)
-                        const SizedBox(width: 8),
+                      if (item.product.hasActiveOffer) const SizedBox(width: 8),
                       Text(
                         '\$${item.product.currentPrice.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -388,7 +434,7 @@ class CartItemTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  
+
                   // Delivery info
                   Text(
                     'Delivery: ${_getDeliveryInfo(item.product)}',
@@ -396,7 +442,7 @@ class CartItemTile extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                   ),
-                  
+
                   // Quantity controls and delete button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -408,7 +454,8 @@ class CartItemTile extends StatelessWidget {
                             onPressed: () {
                               if (item.quantity > 1) {
                                 Provider.of<CartService>(context, listen: false)
-                                    .updateQuantity(item.product.id, item.quantity - 1);
+                                    .updateQuantity(
+                                        item.product.id, item.quantity - 1);
                               }
                             },
                             iconSize: 20,
@@ -427,7 +474,8 @@ class CartItemTile extends StatelessWidget {
                             onPressed: () {
                               if (item.quantity < item.product.quantity) {
                                 Provider.of<CartService>(context, listen: false)
-                                    .updateQuantity(item.product.id, item.quantity + 1);
+                                    .updateQuantity(
+                                        item.product.id, item.quantity + 1);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -446,13 +494,17 @@ class CartItemTile extends StatelessWidget {
                         children: [
                           Text(
                             '\$${(item.product.currentPrice * item.quantity).toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
                           const SizedBox(width: 8),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            icon: const Icon(Icons.delete_outline,
+                                color: Colors.red),
                             onPressed: () => _showDeleteConfirmation(context),
                             iconSize: 20,
                             padding: EdgeInsets.zero,
@@ -476,7 +528,8 @@ class CartItemTile extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Item'),
-        content: Text('Are you sure you want to remove ${item.product.productName} from your cart?'),
+        content: Text(
+            'Are you sure you want to remove ${item.product.productName} from your cart?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -484,11 +537,13 @@ class CartItemTile extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Provider.of<CartService>(context, listen: false).removeItem(item.product.id);
+              Provider.of<CartService>(context, listen: false)
+                  .removeItem(item.product.id);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('${item.product.productName} removed from cart'),
+                  content:
+                      Text('${item.product.productName} removed from cart'),
                 ),
               );
             },
@@ -498,7 +553,7 @@ class CartItemTile extends StatelessWidget {
       ),
     );
   }
-  
+
   String _getDeliveryInfo(Product product) {
     switch (product.delivery) {
       case 'PERPIECE':

@@ -7,6 +7,7 @@ import 'package:bahirmart/pages/product_detail_page.dart';
 import 'package:bahirmart/pages/auctions_page.dart';
 import 'package:bahirmart/pages/cart_page.dart';
 import 'package:bahirmart/core/models/product_model.dart' as prod_model;
+import 'package:bahirmart/pages/notifications_page.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -15,7 +16,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const LandingPage());
       case '/notifications':
         return MaterialPageRoute(
-            builder: (_) => const Scaffold(body: Center(child: Text('Notifications Page'))));
+            builder: (_) => const NotificationsPage(),
+        );
       case '/profile':
       return MaterialPageRoute(
         builder: (_) => const ProfilePage(), // Replace with your actual ProfilePage widget

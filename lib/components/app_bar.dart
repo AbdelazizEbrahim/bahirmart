@@ -108,7 +108,7 @@ class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
     // Combine custom actions with default actions
     final List<Widget> combinedActions = [
       if (actions != null) ...actions!, // Spread custom actions if not null
-      ...defaultActions,               // Spread default actions
+      ...defaultActions, // Spread default actions
     ];
 
     return AppBar(

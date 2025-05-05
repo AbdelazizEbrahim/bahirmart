@@ -76,8 +76,8 @@ class _AdCardState extends State<AdCard> with SingleTickerProviderStateMixin {
                           child: AspectRatio(
                             aspectRatio: 16 / 9,
                             child: CachedNetworkImage(
-                              imageUrl: widget.ad.product.images.isNotEmpty
-                                  ? widget.ad.product.images[0]
+                              imageUrl: widget.ad.product.images!.isNotEmpty
+                                  ? widget.ad.product.images![0]
                                   : 'https://via.placeholder.com/300x200',
                               fit: BoxFit.cover,
                               placeholder: (context, url) => const Center(child: CircularProgressIndicator()),

@@ -30,7 +30,7 @@ class ProductCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                   child: CachedNetworkImage(
-                    imageUrl: product.images.isNotEmpty ? product.images[0] : 'https://via.placeholder.com/150',
+                    imageUrl: product.images!.isNotEmpty ? product.images![0] : 'https://via.placeholder.com/150',
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -108,14 +108,14 @@ class ProductCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        product.review.isNotEmpty
-                            ? product.review.first.rating.toStringAsFixed(1)
+                        product.review!.isNotEmpty
+                            ? product.review!.first.rating.toStringAsFixed(1)
                             : '0.0',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '(${product.review.length})',
+                        '(${product.review!.length})',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[600],
                             ),
