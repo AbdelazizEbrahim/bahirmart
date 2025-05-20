@@ -1,46 +1,49 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:bahirmart/core/models/user_model.dart';
 import 'package:bahirmart/main.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // For debugPrint
 
 class AuthService {
-  static const String _baseUrl = 'https://api.bahirmart.com/api/v1';
+  static const String _baseUrl = 'http://10.161.117.48:3001/api';
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
   );
 
-  static Future<void> signInWithEmail(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/signin'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email.trim(),
-          'password': password,
-        }),
-      );
+  static Future<void> signInWithEmail(
+      BuildContext context, String email, String password) async {
+    final url = Uri.parse('$_baseUrl/mobile-login');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['user'] == null) {
-          throw Exception('Invalid response: No user data found');
-        }
-        final user = User.fromJson(data['user']);
-        final context = navigatorKey.currentContext;
-        if (context == null) {
-          throw Exception('Navigator context is null');
-        }
-        Provider.of<UserProvider>(context, listen: false).setUser(user);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final token = data['token'];
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', token);
+      await prefs.setString('user_email', data['user']['email']);
+
+      final storedToken = prefs.getString('auth_token');
+      if (storedToken != null && storedToken.isNotEmpty) {
+        print('Token stored successfully: $storedToken');
       } else {
-        throw Exception('Failed to sign in: ${response.body}');
+        print('Failed to store token.');
       }
-    } catch (e) {
-      debugPrint('Sign-in error: $e');
-      throw Exception('Sign-in failed: ${e.toString()}');
+
+      // ✅ Redirect to home after successful login
+      Navigator.of(context).pushReplacementNamed('/');
+    } else {
+      final error = jsonDecode(response.body)['error'] ?? 'Login failed';
+      throw Exception(error);
     }
   }
 
@@ -86,7 +89,7 @@ class AuthService {
   static Future<void> signUp(Map<String, dynamic> userData) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/signup'),
+        Uri.parse('$_baseUrl/signup'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(userData),
       );
@@ -159,7 +162,7 @@ class AuthService {
         Uri.parse('https://api.chapa.co/v1/banks'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': apiKey,
+          'Authorization': 'Bearer $apiKey',
         },
       );
 
@@ -177,4 +180,5 @@ class AuthService {
       throw Exception('Failed to fetch banks: ${e.toString()}');
     }
   }
+
 }

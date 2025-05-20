@@ -17,13 +17,15 @@ class _SignInPageState extends State<SignInPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+// Inside your widget class
   Future<void> _signInWithEmail() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
         await AuthService.signInWithEmail(
-          _emailController.text,
-          _passwordController.text,
+          context, // Correct: pass context
+          _emailController.text, // Correct: pass email string
+          _passwordController.text, // Correct: pass password string
         );
         // Navigation will be handled by the auth state listener
       } catch (e) {
@@ -129,4 +131,4 @@ class _SignInPageState extends State<SignInPage> {
     _passwordController.dispose();
     super.dispose();
   }
-} 
+}

@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/services/auth_service.dart';
 import 'package:bahirmart/components/custom_button.dart';
 import 'package:bahirmart/components/custom_text_field.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -19,8 +27,6 @@ class _SignUpPageState extends State<SignUpPage> {
   final _phoneController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
-  final _tinNumberController = TextEditingController();
-  final _nationalIdController = TextEditingController();
   final _accountNameController = TextEditingController();
   final _accountNumberController = TextEditingController();
 
@@ -28,11 +34,36 @@ class _SignUpPageState extends State<SignUpPage> {
   String? _selectedBankSlug;
   List<Map<String, dynamic>> _banks = [];
   bool _isLoading = false;
+  File? _tinFile;
+  File? _nationalIdFile;
+  String? _tinFileUrl;
+  String? _nationalIdFileUrl;
 
   @override
   void initState() {
     super.initState();
+    _initializeFirebase();
     _fetchBanks();
+  }
+
+  Future<void> _initializeFirebase() async {
+    try {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'AIzaSyBXfW7yS26URkiumrxEX0E3COUl5GU2fVk',
+          authDomain: 'food-ordering-app-36d12.firebaseapp.com',
+          projectId: 'food-ordering-app-36d12',
+          storageBucket: 'food-ordering-app-36d12.appspot.com',
+          messagingSenderId: '349793603398',
+          appId: '1:349793603398:web:dd58bc31697be029bddf47',
+          measurementId: 'G-6KFWNLBD4B',
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Firebase initialization failed: ${e.toString()}')),
+      );
+    }
   }
 
   Future<void> _fetchBanks() async {
@@ -40,6 +71,9 @@ class _SignUpPageState extends State<SignUpPage> {
       final banks = await AuthService.getBanks();
       setState(() {
         _banks = banks;
+        if (banks.isNotEmpty && _selectedBankSlug == null) {
+          _selectedBankSlug = banks[0]['slug'] as String?;
+        }
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -48,10 +82,67 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
+  Future<String?> _uploadFile(File file, String path) async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref().child(path);
+      final uploadTask = await storageRef.putFile(file);
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('File upload failed: ${e.toString()}')),
+      );
+      return null;
+    }
+  }
+
+  Future<void> _pickFile(bool isTin) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'png'],
+      );
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          if (isTin) {
+            _tinFile = File(result.files.single.path!);
+          } else {
+            _nationalIdFile = File(result.files.single.path!);
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking file: ${e.toString()}')),
+      );
+    }
+  }
+
   Future<void> _signUp() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
+        String? tinUrl;
+        String? nationalIdUrl;
+
+        if (_selectedRole == 'merchant') {
+          if (_tinFile == null || _nationalIdFile == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please upload both TIN and National ID documents')),
+            );
+            setState(() => _isLoading = false);
+            return;
+          }
+
+          tinUrl = await _uploadFile(_tinFile!, 'tin/${_emailController.text}_${DateTime.now().millisecondsSinceEpoch}');
+          nationalIdUrl = await _uploadFile(_nationalIdFile!, 'national_id/${_emailController.text}_${DateTime.now().millisecondsSinceEpoch}');
+
+          if (tinUrl == null || nationalIdUrl == null) {
+            setState(() => _isLoading = false);
+            return;
+          }
+        }
+
         final userData = {
           'fullName': _fullNameController.text,
           'email': _emailController.text,
@@ -64,8 +155,8 @@ class _SignUpPageState extends State<SignUpPage> {
           },
           if (_selectedRole == 'merchant') ...{
             'merchantDetails': {
-              'tinNumber': _tinNumberController.text,
-              'nationalId': _nationalIdController.text,
+              'tinNumberUrl': tinUrl,
+              'nationalIdUrl': nationalIdUrl,
               'account': {
                 'name': _accountNameController.text,
                 'number': _accountNumberController.text,
@@ -183,7 +274,10 @@ class _SignUpPageState extends State<SignUpPage> {
                     value: 'customer',
                     groupValue: _selectedRole,
                     onChanged: (value) {
-                      setState(() => _selectedRole = value!);
+                      setState(() {
+                        _selectedRole = value!;
+                        _selectedBankSlug = _banks.isNotEmpty ? _banks[0]['slug'] as String? : null;
+                      });
                     },
                   ),
                   const Text('Customer'),
@@ -191,7 +285,10 @@ class _SignUpPageState extends State<SignUpPage> {
                     value: 'merchant',
                     groupValue: _selectedRole,
                     onChanged: (value) {
-                      setState(() => _selectedRole = value!);
+                      setState(() {
+                        _selectedRole = value!;
+                        _selectedBankSlug = _banks.isNotEmpty ? _banks[0]['slug'] as String? : null;
+                      });
                     },
                   ),
                   const Text('Merchant'),
@@ -199,27 +296,31 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               if (_selectedRole == 'merchant') ...[
                 const SizedBox(height: 16),
-                CustomTextField(
-                  controller: _tinNumberController,
-                  label: 'TIN Number',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your TIN number';
-                    }
-                    return null;
-                  },
+                ElevatedButton(
+                  onPressed: () => _pickFile(true),
+                  child: Text(_tinFile == null ? 'Upload TIN Document' : 'TIN Document Selected'),
                 ),
+                if (_tinFile != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Selected: ${_tinFile!.path.split('/').last}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
                 const SizedBox(height: 16),
-                CustomTextField(
-                  controller: _nationalIdController,
-                  label: 'National ID',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your national ID';
-                    }
-                    return null;
-                  },
+                ElevatedButton(
+                  onPressed: () => _pickFile(false),
+                  child: Text(_nationalIdFile == null ? 'Upload National ID Document' : 'National ID Document Selected'),
                 ),
+                if (_nationalIdFile != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Selected: ${_nationalIdFile!.path.split('/').last}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: _selectedBankSlug,
@@ -227,12 +328,15 @@ class _SignUpPageState extends State<SignUpPage> {
                     labelText: 'Select Bank',
                     border: OutlineInputBorder(),
                   ),
-                  items: _banks.map((bank) {
-                    return DropdownMenuItem<String>(
-                      value: bank['slug'] as String,
-                      child: Text(bank['name'] as String),
-                    );
-                  }).toList(),
+                  items: _banks
+                      .where((bank) => bank['slug'] != null)
+                      .map((bank) {
+                        return DropdownMenuItem<String>(
+                          value: bank['slug'] as String,
+                          child: Text(bank['name'] as String? ?? 'Unknown Bank'),
+                        );
+                      })
+                      .toList(),
                   onChanged: (value) {
                     setState(() => _selectedBankSlug = value);
                   },
@@ -268,8 +372,8 @@ class _SignUpPageState extends State<SignUpPage> {
                         (bank) => bank['slug'] == _selectedBankSlug,
                         orElse: () => {'acct_length': 0},
                       );
-                      final expectedLength = selectedBank['acct_length'] as int?;
-                      if (expectedLength == null || value.length != expectedLength) {
+                      final expectedLength = selectedBank['acct_length'] as int? ?? 0;
+                      if (expectedLength == 0 || value.length != expectedLength) {
                         return 'Account number must be $expectedLength digits';
                       }
                     }
@@ -305,10 +409,56 @@ class _SignUpPageState extends State<SignUpPage> {
     _phoneController.dispose();
     _stateController.dispose();
     _cityController.dispose();
-    _tinNumberController.dispose();
-    _nationalIdController.dispose();
     _accountNameController.dispose();
     _accountNumberController.dispose();
     super.dispose();
+  }
+}
+
+// Updated getBanks function
+Future<List<Map<String, dynamic>>> getBanks() async {
+  try {
+    final apiKey = dotenv.env['CHAPA_SECRET_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('CHAPA_SECRET_KEY is not set in .env');
+    }
+
+    final response = await http.get(
+      Uri.parse('https://api.chapa.co/v1/banks'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data['data'] == null || data['data'] is! List) {
+        throw Exception('Invalid response format: No bank data found');
+      }
+
+      // Extract name, acct_length, and slug from each bank
+      final List<Map<String, dynamic>> banks = List<Map<String, dynamic>>.from(data['data'])
+          .asMap()
+          .entries
+          .map((entry) {
+            final bank = entry.value;
+            return {
+              'name': bank['name'] as String? ?? 'Unknown Bank',
+              'acct_length': bank['acct_length'] as int? ?? 10,
+              'slug': bank['slug'] as String? ?? 'bank_${entry.key}',
+            };
+          })
+          .where((bank) => bank['slug'] != null)
+          .toList();
+
+      return banks;
+    } else {
+      throw Exception('Failed to fetch banks: ${response.body}');
+    }
+  } catch (e) {
+    debugPrint('Fetch banks error: $e');
+    throw Exception('Failed to fetch banks: ${e.toString()}');
   }
 }

@@ -8,6 +8,8 @@ import 'package:bahirmart/pages/auctions_page.dart';
 import 'package:bahirmart/pages/cart_page.dart';
 import 'package:bahirmart/core/models/product_model.dart' as prod_model;
 import 'package:bahirmart/pages/notifications_page.dart';
+import 'package:bahirmart/pages/sign_in_page.dart';
+import 'package:bahirmart/pages/sign_up_page.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -16,19 +18,21 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const LandingPage());
       case '/notifications':
         return MaterialPageRoute(
-            builder: (_) => const NotificationsPage(),
+          builder: (_) => const NotificationsPage(),
         );
       case '/profile':
-      return MaterialPageRoute(
-        builder: (_) => const ProfilePage(), // Replace with your actual ProfilePage widget
-      );
-    case '/orders':
-      return MaterialPageRoute(
-        builder: (_) => const OrdersPage(), // Use the OrdersPage widget
-      );
+        return MaterialPageRoute(
+          builder: (_) =>
+              const ProfilePage(), // Replace with your actual ProfilePage widget
+        );
+      case '/orders':
+        return MaterialPageRoute(
+          builder: (_) => const OrdersPage(), // Use the OrdersPage widget
+        );
       case '/settings':
         return MaterialPageRoute(
-            builder: (_) => const Scaffold(body: Center(child: Text('Settings Page'))));
+            builder: (_) =>
+                const Scaffold(body: Center(child: Text('Settings Page'))));
       case '/products':
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
@@ -39,14 +43,13 @@ class AppRouter {
           ),
         );
       case '/auctions':
-        return MaterialPageRoute(
-            builder: (_) => const AuctionListPage());
+        return MaterialPageRoute(builder: (_) => const AuctionListPage());
       case '/cart':
-        return MaterialPageRoute(
-            builder: (_) => const CartPage());
+        return MaterialPageRoute(builder: (_) => const CartPage());
       case '/more':
         return MaterialPageRoute(
-            builder: (_) => const Scaffold(body: Center(child: Text('More Page'))));
+            builder: (_) =>
+                const Scaffold(body: Center(child: Text('More Page'))));
       case '/product_detail':
         final product = settings.arguments as prod_model.Product?;
         if (product == null) {
@@ -59,12 +62,15 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => ProductDetailPage(product: product),
         );
-      case '/login':
-        return MaterialPageRoute(
-            builder: (_) => const Scaffold(body: Center(child: Text('Login Page'))));
+      case '/signin':
+        return MaterialPageRoute(builder: (_) => const SignInPage());
+
+      case '/signup':
+        return MaterialPageRoute(builder: (_) => const SignUpPage());
       default:
         return MaterialPageRoute(
-            builder: (_) => const Scaffold(body: Center(child: Text('Page Not Found'))));
+            builder: (_) =>
+                const Scaffold(body: Center(child: Text('Page Not Found'))));
     }
   }
 }
