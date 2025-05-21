@@ -17,17 +17,15 @@ class _SignInPageState extends State<SignInPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-// Inside your widget class
   Future<void> _signInWithEmail() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
         await AuthService.signInWithEmail(
-          context, // Correct: pass context
-          _emailController.text, // Correct: pass email string
-          _passwordController.text, // Correct: pass password string
+          context,
+          _emailController.text,
+          _passwordController.text,
         );
-        // Navigation will be handled by the auth state listener
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
@@ -42,7 +40,6 @@ class _SignInPageState extends State<SignInPage> {
     setState(() => _isLoading = true);
     try {
       await AuthService.signInWithGoogle();
-      // Navigation will be handled by the auth state listener
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
@@ -94,6 +91,15 @@ class _SignInPageState extends State<SignInPage> {
                   }
                   return null;
                 },
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/forgot-password');
+                  },
+                  child: const Text('Forgot Password?'),
+                ),
               ),
               const SizedBox(height: 24),
               CustomButton(

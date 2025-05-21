@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For debugPrint
 
 class AuthService {
-  static const String _baseUrl = 'http://192.168.199.56:3001/api';
+  static const String _baseUrl = 'http://192.168.219.23:3001/api';
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
   );
@@ -44,6 +44,36 @@ class AuthService {
     } else {
       final error = jsonDecode(response.body)['error'] ?? 'Login failed';
       throw Exception(error);
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getBanks() async {
+    try {
+      final apiKey = dotenv.env['CHAPA_SECRET_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception('CHAPA_SECRET_KEY is not set in .env');
+      }
+
+      final response = await http.get(
+        Uri.parse('https://api.chapa.co/v1/banks'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data'] == null || data['data'] is! List) {
+          throw Exception('Invalid response format: No bank data found');
+        }
+        return List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        throw Exception('Failed to fetch banks: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Fetch banks error: $e');
+      throw Exception('Failed to fetch banks: ${e.toString()}');
     }
   }
 
@@ -174,33 +204,59 @@ class AuthService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getBanks() async {
+  static Future<void> sendPasswordResetCode(String email) async {
     try {
-      final apiKey = dotenv.env['CHAPA_SECRET_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        throw Exception('CHAPA_SECRET_KEY is not set in .env');
-      }
+      await sendOtp(email, 'reset');
+      debugPrint('Password reset code sent successfully to $email');
+    } catch (e) {
+      debugPrint('Send password reset code error: $e');
+      throw Exception('Failed to send password reset code: ${e.toString()}');
+    }
+  }
 
-      final response = await http.get(
-        Uri.parse('https://api.chapa.co/v1/banks'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
+  static Future<void> verifyResetCode(String email, String code) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verifyOtp?action=reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'code': code,
+        }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['data'] == null || data['data'] is! List) {
-          throw Exception('Invalid response format: No bank data found');
-        }
-        return List<Map<String, dynamic>>.from(data['data']);
-      } else {
-        throw Exception('Failed to fetch banks: ${response.body}');
+      if (response.statusCode != 200) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to verify reset code');
       }
+      debugPrint('Reset code verified successfully');
     } catch (e) {
-      debugPrint('Fetch banks error: $e');
-      throw Exception('Failed to fetch banks: ${e.toString()}');
+      debugPrint('Verify reset code error: $e');
+      throw Exception('Failed to verify reset code: ${e.toString()}');
+    }
+  }
+
+  static Future<void> updatePassword(
+      String email, String code, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verifyOtp?action=reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'otp': code,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to update password');
+      }
+      debugPrint('Password updated successfully');
+    } catch (e) {
+      debugPrint('Update password error: $e');
+      throw Exception('Failed to update password: ${e.toString()}');
     }
   }
 }

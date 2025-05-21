@@ -11,6 +11,7 @@ import 'package:bahirmart/core/models/product_model.dart' as prod_model;
 import 'package:bahirmart/pages/notifications_page.dart';
 import 'package:bahirmart/pages/sign_in_page.dart';
 import 'package:bahirmart/pages/sign_up_page.dart';
+import 'package:bahirmart/pages/forgot_password_page.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -68,6 +69,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const SignUpPage());
       case '/verify-otp':
         return MaterialPageRoute(builder: (_) => const VerifyOtpPage());
+      case '/forgot-password':
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordPage());
       default:
         return MaterialPageRoute(
             builder: (_) =>
