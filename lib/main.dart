@@ -7,33 +7,39 @@ import 'package:bahirmart/theme/app_theme.dart';
 import 'package:bahirmart/core/services/cart_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  
-  // Request location permission
   await _requestLocationPermission();
 
-  final mockUser = User(
-    id: 'user_1',
-    fullName: 'Demo User',
-    email: 'demo@bahirmart.com',
-    password: 'demo123',
-    role: 'customer',
-    image: 'https://picsum.photos/50/50?random=1',
-    isBanned: false,
-    isEmailVerified: true,
-    isDeleted: false,
-    approvalStatus: 'approved',
-  );
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+  final email = prefs.getString('user_email');
+
+  User? user;
+  if (token != null && email != null) {
+    user = User(
+      id: 'from_token', // Replace with actual user ID if needed
+      fullName: 'Loaded User',
+      email: email,
+      password: '', // Not stored locally
+      role: 'customer',
+      image: 'https://picsum.photos/50/50?random=1',
+      isBanned: false,
+      isEmailVerified: true,
+      isDeleted: false,
+      approvalStatus: 'approved',
+    );
+  }
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()..setUser(mockUser)),
+        ChangeNotifierProvider(create: (_) => UserProvider()..setUser(user)),
         ChangeNotifierProvider(create: (_) => CartService()),
       ],
       child: const BahirMartApp(),
@@ -44,7 +50,6 @@ void main() async {
 Future<void> _requestLocationPermission() async {
   final status = await Permission.location.request();
   if (status.isDenied) {
-    // Defer showing dialog until the app is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showDialog(
         context: navigatorKey.currentContext!,

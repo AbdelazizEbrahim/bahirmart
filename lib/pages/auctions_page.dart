@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:bahirmart/components/app_bar.dart';
 import 'package:bahirmart/components/bottom_navigation_bar.dart';
 import 'package:bahirmart/core/models/auction_model.dart';
 import 'package:bahirmart/pages/auction_detail_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
+
+final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
 
 class AuctionListPage extends StatefulWidget {
   const AuctionListPage({Key? key}) : super(key: key);
@@ -15,6 +20,7 @@ class AuctionListPage extends StatefulWidget {
 
 class _AuctionListPageState extends State<AuctionListPage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _isFilterExpanded = false;
   String _selectedCategory = 'All';
   String _selectedCondition = 'All';
@@ -23,160 +29,95 @@ class _AuctionListPageState extends State<AuctionListPage> {
   double _maxPrice = 1000000;
   List<Auction> _auctions = [];
   List<Auction> _filteredAuctions = [];
+  int _currentPage = 1;
+  bool _isLoading = false;
+  bool _hasMore = true;
+  static const int _limit = 12;
 
   @override
   void initState() {
     super.initState();
-    _loadMockAuctions();
+    _fetchAuctions();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !_isLoading &&
+          _hasMore) {
+        _fetchAuctions();
+      }
+    });
   }
 
-  void _loadMockAuctions() {
-    // Mock data
-    _auctions = [
-      Auction(
-        id: '1',
-        auctionTitle: 'iPhone 13 Pro Max',
-        merchantName: 'Tech Store',
-        category: 'Electronics',
-        description: 'Brand new iPhone 13 Pro Max 256GB',
-        condition: 'new',
-        startTime: DateTime.now(),
-        endTime: DateTime.now().add(const Duration(days: 3)),
-        itemImg: ['https://picsum.photos/200'],
-        startingPrice: 999.99,
-        reservedPrice: 1200.00,
-        bidIncrement: 10.00,
-        status: 'active',
-        adminApproval: 'approved',
-        paymentDuration: 24,
-        totalQuantity: 1,
-        remainingQuantity: 1,
-        buyByParts: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Auction(
-        id: '2',
-        auctionTitle: 'Samsung 4K Smart TV',
-        merchantName: 'Electronics Hub',
-        category: 'Electronics',
-        description: '55-inch Samsung 4K Smart TV with HDR',
-        condition: 'new',
-        startTime: DateTime.now(),
-        endTime: DateTime.now().add(const Duration(days: 5)),
-        itemImg: ['https://picsum.photos/201'],
-        startingPrice: 699.99,
-        reservedPrice: 800.00,
-        bidIncrement: 5.00,
-        status: 'active',
-        adminApproval: 'approved',
-        paymentDuration: 48,
-        totalQuantity: 1,
-        remainingQuantity: 1,
-        buyByParts: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Auction(
-        id: '3',
-        auctionTitle: 'Nike Air Max Sneakers',
-        merchantName: 'Sports Gear',
-        category: 'Fashion',
-        description: 'Limited edition Nike Air Max sneakers',
-        condition: 'new',
-        startTime: DateTime.now(),
-        endTime: DateTime.now().add(const Duration(days: 2)),
-        itemImg: ['https://picsum.photos/202'],
-        startingPrice: 149.99,
-        reservedPrice: 180.00,
-        bidIncrement: 2.00,
-        status: 'active',
-        adminApproval: 'approved',
-        paymentDuration: 24,
-        totalQuantity: 1,
-        remainingQuantity: 1,
-        buyByParts: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Auction(
-        id: '4',
-        auctionTitle: 'Vintage Leather Jacket',
-        merchantName: 'Fashion Forward',
-        category: 'Fashion',
-        description: 'Genuine leather jacket in excellent condition',
-        condition: 'used',
-        startTime: DateTime.now(),
-        endTime: DateTime.now().add(const Duration(days: 4)),
-        itemImg: ['https://picsum.photos/203'],
-        startingPrice: 199.99,
-        reservedPrice: 250.00,
-        bidIncrement: 5.00,
-        status: 'active',
-        adminApproval: 'approved',
-        paymentDuration: 24,
-        totalQuantity: 1,
-        remainingQuantity: 1,
-        buyByParts: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Auction(
-        id: '5',
-        auctionTitle: 'Gaming PC Bundle',
-        merchantName: 'Gaming Zone',
-        category: 'Electronics',
-        description: 'High-end gaming PC with RTX 3080, 32GB RAM, 1TB SSD',
-        condition: 'new',
-        startTime: DateTime.now(),
-        endTime: DateTime.now().add(const Duration(days: 7)),
-        itemImg: ['https://picsum.photos/204'],
-        startingPrice: 1499.99,
-        reservedPrice: 1800.00,
-        bidIncrement: 20.00,
-        status: 'active',
-        adminApproval: 'approved',
-        paymentDuration: 72,
-        totalQuantity: 1,
-        remainingQuantity: 1,
-        buyByParts: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ];
-    _filterAuctions();
+  Future<void> _fetchAuctions() async {
+    if (_isLoading || !_hasMore) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'http://192.168.199.230:3001/api/fetchAuctions?page=$_currentPage&limit=$_limit'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] != true || data['data'] == null) {
+          throw Exception('Invalid response format');
+        }
+
+        final List<Auction> newAuctions = (data['data'] as List)
+            .map((json) => Auction.fromJson(json))
+            .toList();
+
+        setState(() {
+          _auctions.addAll(newAuctions);
+          _filteredAuctions = _auctions;
+          _currentPage++;
+          _hasMore = newAuctions.length == _limit;
+          _filterAuctions();
+        });
+      } else {
+        throw Exception('Failed to fetch auctions: ${response.body}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching auctions: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _filterAuctions() {
     setState(() {
       _filteredAuctions = _auctions.where((auction) {
-        // Search filter
-        if (_searchController.text.isNotEmpty) {
-          final searchLower = _searchController.text.toLowerCase();
-          if (!auction.auctionTitle.toLowerCase().contains(searchLower) &&
-              !auction.description.toLowerCase().contains(searchLower) &&
-              !auction.merchantName.toLowerCase().contains(searchLower)) {
+        final searchLower = _searchController.text.toLowerCase();
+        if (searchLower.isNotEmpty) {
+          if (!(auction.auctionTitle?.toLowerCase().contains(searchLower) ?? false) &&
+              !(auction.description?.toLowerCase().contains(searchLower) ?? false) &&
+              !(auction.merchantName?.toLowerCase().contains(searchLower) ?? false)) {
             return false;
           }
         }
 
-        // Category filter
-        if (_selectedCategory != 'All' && auction.category != _selectedCategory) {
+        if (_selectedCategory != 'All' &&
+            auction.category != _selectedCategory) {
           return false;
         }
 
-        // Condition filter
-        if (_selectedCondition != 'All' && auction.condition != _selectedCondition) {
+        if (_selectedCondition != 'All' &&
+            auction.condition != _selectedCondition) {
           return false;
         }
 
-        // Status filter
         if (_selectedStatus != 'All' && auction.status != _selectedStatus) {
           return false;
         }
 
-        // Price range filter
-        if (auction.startingPrice < _minPrice || auction.startingPrice > _maxPrice) {
+        final price = auction.startingPrice ?? 0.0;
+        if (price < _minPrice || price > _maxPrice) {
           return false;
         }
 
@@ -191,7 +132,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
       appBar: BahirMartAppBar(title: 'Auctions'),
       body: Column(
         children: [
-          // Search and Filter Section
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -206,7 +146,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
             ),
             child: Column(
               children: [
-                // Search Bar
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
@@ -221,8 +160,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
                   onChanged: (value) => _filterAuctions(),
                 ),
                 const SizedBox(height: 16),
-
-                // Filter Toggle Button
                 InkWell(
                   onTap: () {
                     setState(() {
@@ -247,8 +184,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     ),
                   ),
                 ),
-
-                // Filter Options
                 if (_isFilterExpanded) ...[
                   const SizedBox(height: 16),
                   Wrap(
@@ -291,7 +226,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Price Range Slider
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -322,41 +256,48 @@ class _AuctionListPageState extends State<AuctionListPage> {
               ],
             ),
           ),
-
-          // Auction List
           Expanded(
-            child: _filteredAuctions.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey[400],
+            child: _auctions.isEmpty && _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredAuctions.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No auctions found',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No auctions found',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredAuctions.length,
-                    itemBuilder: (context, index) {
-                      final auction = _filteredAuctions[index];
-                      return _buildAuctionCard(auction);
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredAuctions.length + (_hasMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == _filteredAuctions.length && _hasMore) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final auction = _filteredAuctions[index];
+                          return _buildAuctionCard(auction);
+                        },
+                      ),
           ),
         ],
       ),
-      bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 2),
+      bottomNavigationBar: BahirMartBottomNavigationBar(currentIndex: 2),
     );
   }
 
@@ -410,11 +351,12 @@ class _AuctionListPageState extends State<AuctionListPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Auction Image
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: CachedNetworkImage(
-                imageUrl: auction.itemImg.first,
+                imageUrl: auction.itemImg?.isNotEmpty == true
+                    ? auction.itemImg!.first
+                    : 'https://via.placeholder.com/150',
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -424,19 +366,17 @@ class _AuctionListPageState extends State<AuctionListPage> {
                 errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title and Status
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
-                          auction.auctionTitle,
+                          auction.auctionTitle ?? 'Untitled Auction',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -450,13 +390,14 @@ class _AuctionListPageState extends State<AuctionListPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(auction.status).withOpacity(0.1),
+                          color: _getStatusColor(auction.status ?? 'pending')
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          auction.status.toUpperCase(),
+                          (auction.status ?? 'pending').toUpperCase(),
                           style: TextStyle(
-                            color: _getStatusColor(auction.status),
+                            color: _getStatusColor(auction.status ?? 'pending'),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -464,13 +405,11 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  // Merchant Name and Condition
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Sold by ${auction.merchantName}',
+                        'Sold by ${auction.merchantName ?? 'Unknown'}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -481,15 +420,15 @@ class _AuctionListPageState extends State<AuctionListPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: auction.condition == 'new' 
+                          color: (auction.condition ?? 'new') == 'new'
                               ? Colors.blue.withOpacity(0.1)
                               : Colors.orange.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          auction.condition.toUpperCase(),
+                          (auction.condition ?? 'new').toUpperCase(),
                           style: TextStyle(
-                            color: auction.condition == 'new' 
+                            color: (auction.condition ?? 'new') == 'new'
                                 ? Colors.blue
                                 : Colors.orange,
                             fontWeight: FontWeight.bold,
@@ -500,8 +439,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  // Current Bid and Time Remaining
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -515,7 +452,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
                                 ),
                           ),
                           Text(
-                            currencyFormat.format(auction.startingPrice),
+                            currencyFormat.format(auction.startingPrice ?? 0.0),
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
@@ -538,8 +475,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  
-                  // Bid Button
                   if (auction.status == 'active')
                     SizedBox(
                       width: double.infinity,
@@ -567,11 +502,10 @@ class _AuctionListPageState extends State<AuctionListPage> {
     final TextEditingController bidController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-    
-    // Calculate minimum bid
-    final minBid = auction.startingPrice + auction.bidIncrement;
-    bidController.text = minBid.toString();
-    
+
+    final minBid = (auction.startingPrice ?? 0.0) + (auction.bidIncrement ?? 1.0);
+    bidController.text = minBid.toStringAsFixed(2);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -583,7 +517,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Current Bid: ${currencyFormat.format(auction.startingPrice)}',
+                'Current Bid: ${currencyFormat.format(auction.startingPrice ?? 0.0)}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -610,11 +544,11 @@ class _AuctionListPageState extends State<AuctionListPage> {
                   if (bidAmount == null) {
                     return 'Please enter a valid number';
                   }
-                  if (bidAmount <= auction.startingPrice) {
+                  if (bidAmount <= (auction.startingPrice ?? 0.0)) {
                     return 'Bid must be higher than current bid';
                   }
                   if (bidAmount < minBid) {
-                    return 'Minimum bid increment is ${currencyFormat.format(auction.bidIncrement)}';
+                    return 'Minimum bid increment is ${currencyFormat.format(auction.bidIncrement ?? 1.0)}';
                   }
                   return null;
                 },
@@ -643,19 +577,16 @@ class _AuctionListPageState extends State<AuctionListPage> {
   }
 
   void _placeBid(Auction auction, double bidAmount) {
-    // Mock API call for placing a bid
     _mockApiCall(
       'placeBid',
       {
-        'auctionId': auction.id,
+        'auctionId': auction.id ?? '',
         'bidAmount': bidAmount,
       },
       (response) {
-        // Update the auction with the new bid
         setState(() {
           final index = _auctions.indexWhere((a) => a.id == auction.id);
           if (index != -1) {
-            // Create a new auction with updated starting price
             final updatedAuction = Auction(
               id: auction.id,
               auctionTitle: auction.auctionTitle,
@@ -666,7 +597,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
               startTime: auction.startTime,
               endTime: auction.endTime,
               itemImg: auction.itemImg,
-              startingPrice: bidAmount, // Update the current bid
+              startingPrice: bidAmount,
               reservedPrice: auction.reservedPrice,
               bidIncrement: auction.bidIncrement,
               rejectionReason: auction.rejectionReason,
@@ -683,10 +614,11 @@ class _AuctionListPageState extends State<AuctionListPage> {
             _filterAuctions();
           }
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Bid placed successfully: ${NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(bidAmount)}'),
+            content: Text(
+                'Bid placed successfully: ${currencyFormat.format(bidAmount)}'),
             backgroundColor: Colors.green,
           ),
         );
@@ -694,22 +626,19 @@ class _AuctionListPageState extends State<AuctionListPage> {
     );
   }
 
-  // Mock API call function for future integration
-  void _mockApiCall(String endpoint, Map<String, dynamic> data, Function(Map<String, dynamic>) onSuccess) {
-    // Simulate network delay
+  void _mockApiCall(String endpoint, Map<String, dynamic> data,
+      Function(Map<String, dynamic>) onSuccess) {
     Future.delayed(const Duration(milliseconds: 800), () {
-      // Mock successful response
       final response = {
         'success': true,
         'message': 'Operation completed successfully',
         'data': data,
       };
-      
       onSuccess(response);
     });
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String? status) {
     switch (status) {
       case 'active':
         return Colors.green;
@@ -723,4 +652,11 @@ class _AuctionListPageState extends State<AuctionListPage> {
         return Colors.grey;
     }
   }
-} 
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+}

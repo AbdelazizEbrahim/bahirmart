@@ -1,77 +1,77 @@
 import 'package:flutter/material.dart';
 
 class Auction {
-  final String id;
-  final String auctionTitle;
-  final String merchantName;
-  final String category;
-  final String description;
-  final String condition;
-  final DateTime startTime;
-  final DateTime endTime;
-  final List<String> itemImg;
-  final double startingPrice;
-  final double reservedPrice;
-  final double bidIncrement;
+  final String? id;
+  final String? auctionTitle;
+  final String? merchantName;
+  final String? category;
+  final String? description;
+  final String? condition;
+  final DateTime? startTime;
+  final DateTime? endTime;
+  final List<String>? itemImg;
+  final double? startingPrice;
+  final double? reservedPrice;
+  final double? bidIncrement;
   final Map<String, String>? rejectionReason;
-  final String status;
-  final String adminApproval;
-  final int paymentDuration;
-  final int totalQuantity;
-  final int remainingQuantity;
-  final bool buyByParts;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final String? status;
+  final String? adminApproval;
+  final int? paymentDuration;
+  final int? totalQuantity;
+  final int? remainingQuantity;
+  final bool? buyByParts;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Auction({
-    required this.id,
-    required this.auctionTitle,
-    required this.merchantName,
-    required this.category,
-    required this.description,
-    required this.condition,
-    required this.startTime,
-    required this.endTime,
-    required this.itemImg,
-    required this.startingPrice,
-    required this.reservedPrice,
-    required this.bidIncrement,
+    this.id,
+    this.auctionTitle,
+    this.merchantName,
+    this.category,
+    this.description,
+    this.condition,
+    this.startTime,
+    this.endTime,
+    this.itemImg,
+    this.startingPrice,
+    this.reservedPrice,
+    this.bidIncrement,
     this.rejectionReason,
-    required this.status,
-    required this.adminApproval,
-    required this.paymentDuration,
-    required this.totalQuantity,
-    required this.remainingQuantity,
-    required this.buyByParts,
-    required this.createdAt,
-    required this.updatedAt,
+    this.status,
+    this.adminApproval,
+    this.paymentDuration,
+    this.totalQuantity,
+    this.remainingQuantity,
+    this.buyByParts,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Auction.fromJson(Map<String, dynamic> json) {
     return Auction(
-      id: json['_id'] ?? '',
-      auctionTitle: json['auctionTitle'] ?? '',
-      merchantName: json['merchantName'] ?? '',
-      category: json['category'] ?? '',
-      description: json['description'] ?? '',
-      condition: json['condition'] ?? '',
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
-      itemImg: List<String>.from(json['itemImg'] ?? []),
-      startingPrice: (json['startingPrice'] ?? 0).toDouble(),
-      reservedPrice: (json['reservedPrice'] ?? 0).toDouble(),
-      bidIncrement: (json['bidIncrement'] ?? 1).toDouble(),
+      id: json['_id'] as String? ?? '',
+      auctionTitle: json['auctionTitle'] as String? ?? '',
+      merchantName: json['merchantName'] as String? ?? '',
+      category: json['category'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      condition: json['condition'] as String? ?? '',
+      startTime: json['startTime'] != null ? DateTime.tryParse(json['startTime'] as String) : null,
+      endTime: json['endTime'] != null ? DateTime.tryParse(json['endTime'] as String) : null,
+      itemImg: json['itemImg'] != null ? List<String>.from(json['itemImg'] as List) : [],
+      startingPrice: (json['startingPrice'] as num?)?.toDouble() ?? 0.0,
+      reservedPrice: (json['reservedPrice'] as num?)?.toDouble() ?? 0.0,
+      bidIncrement: (json['bidIncrement'] as num?)?.toDouble() ?? 1.0,
       rejectionReason: json['rejectionReason'] != null
-          ? Map<String, String>.from(json['rejectionReason'])
+          ? Map<String, String>.from(json['rejectionReason'] as Map)
           : null,
-      status: json['status'] ?? 'pending',
-      adminApproval: json['adminApproval'] ?? 'pending',
-      paymentDuration: json['paymentDuration'] ?? 24,
-      totalQuantity: json['totalQuantity'] ?? 1,
-      remainingQuantity: json['remainingQuantity'] ?? 1,
-      buyByParts: json['buyByParts'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      status: json['status'] as String? ?? 'pending',
+      adminApproval: json['adminApproval'] as String? ?? 'pending',
+      paymentDuration: json['paymentDuration'] as int? ?? 24,
+      totalQuantity: json['totalQuantity'] as int? ?? 1,
+      remainingQuantity: json['remainingQuantity'] as int? ?? 1,
+      buyByParts: json['buyByParts'] as bool? ?? false,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
     );
   }
 
@@ -83,8 +83,8 @@ class Auction {
       'category': category,
       'description': description,
       'condition': condition,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
+      'startTime': startTime?.toIso8601String(),
+      'endTime': endTime?.toIso8601String(),
       'itemImg': itemImg,
       'startingPrice': startingPrice,
       'reservedPrice': reservedPrice,
@@ -96,8 +96,8 @@ class Auction {
       'totalQuantity': totalQuantity,
       'remainingQuantity': remainingQuantity,
       'buyByParts': buyByParts,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -110,12 +110,12 @@ class Auction {
   bool get isPendingApproval => adminApproval == 'pending';
 
   Duration get timeRemaining {
-    if (isEnded) return Duration.zero;
+    if (isEnded || endTime == null || startTime == null) return Duration.zero;
     final now = DateTime.now();
-    if (now.isBefore(startTime)) {
-      return startTime.difference(now);
+    if (now.isBefore(startTime!)) {
+      return startTime!.difference(now);
     }
-    return endTime.difference(now);
+    return endTime!.difference(now);
   }
 
   String get formattedTimeRemaining {
@@ -130,4 +130,4 @@ class Auction {
       return '${duration.inSeconds}s';
     }
   }
-} 
+}

@@ -61,7 +61,8 @@ class _SignUpPageState extends State<SignUpPage> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Firebase initialization failed: ${e.toString()}')),
+        SnackBar(
+            content: Text('Firebase initialization failed: ${e.toString()}')),
       );
     }
   }
@@ -118,66 +119,105 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  Future<void> _signUp() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      try {
-        String? tinUrl;
-        String? nationalIdUrl;
+Future<void> _signUp() async {
+  print('SignUp: [${DateTime.now()}] SignUp button pressed');
+  if (_formKey.currentState!.validate()) {
+    // Validate email format
+    final email = _emailController.text.trim();
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      print('SignUp: [${DateTime.now()}] Invalid email format: $email');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
 
-        if (_selectedRole == 'merchant') {
-          if (_tinFile == null || _nationalIdFile == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please upload both TIN and National ID documents')),
-            );
-            setState(() => _isLoading = false);
-            return;
-          }
+    print('SignUp: [${DateTime.now()}] Form validation passed, email: $email');
+    setState(() {
+      _isLoading = true;
+      print('SignUp: [${DateTime.now()}] Setting isLoading to true');
+    });
+    try {
+      String? tinUrl;
+      String? nationalIdUrl;
 
-          tinUrl = await _uploadFile(_tinFile!, 'tin/${_emailController.text}_${DateTime.now().millisecondsSinceEpoch}');
-          nationalIdUrl = await _uploadFile(_nationalIdFile!, 'national_id/${_emailController.text}_${DateTime.now().millisecondsSinceEpoch}');
-
-          if (tinUrl == null || nationalIdUrl == null) {
-            setState(() => _isLoading = false);
-            return;
-          }
+      if (_selectedRole == 'merchant') {
+        print('SignUp: [${DateTime.now()}] Role is merchant, checking documents');
+        if (_tinFile == null || _nationalIdFile == null) {
+          print('SignUp: [${DateTime.now()}] Missing TIN or National ID documents');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please upload both TIN and National ID documents')),
+          );
+          setState(() {
+            _isLoading = false;
+            print('SignUp: [${DateTime.now()}] Setting isLoading to false due to missing documents');
+          });
+          return;
         }
 
-        final userData = {
-          'fullName': _fullNameController.text,
-          'email': _emailController.text,
-          'password': _passwordController.text,
-          'role': _selectedRole,
-          'phoneNumber': _phoneController.text,
-          'address': {
-            'state': _stateController.text,
-            'city': _cityController.text,
-          },
-          if (_selectedRole == 'merchant') ...{
-            'merchantDetails': {
-              'tinNumberUrl': tinUrl,
-              'nationalIdUrl': nationalIdUrl,
-              'account': {
-                'name': _accountNameController.text,
-                'number': _accountNumberController.text,
-                'bankCode': _selectedBankSlug,
-              },
+        print('SignUp: [${DateTime.now()}] Uploading TIN and National ID files');
+        tinUrl = await _uploadFile(_tinFile!,
+            'tin/${email}_${DateTime.now().millisecondsSinceEpoch}');
+        nationalIdUrl = await _uploadFile(_nationalIdFile!,
+            'national_id/${email}_${DateTime.now().millisecondsSinceEpoch}');
+
+        if (tinUrl == null || nationalIdUrl == null) {
+          print('SignUp: [${DateTime.now()}] File upload failed');
+          setState(() {
+            _isLoading = false;
+            print('SignUp: [${DateTime.now()}] Setting isLoading to false due to upload failure');
+          });
+          return;
+        }
+      }
+
+      final userData = {
+        'fullName': _fullNameController.text.trim(),
+        'email': email,
+        'password': _passwordController.text,
+        'role': _selectedRole,
+        'phoneNumber': _phoneController.text.trim(),
+        'address': {
+          'state': _stateController.text.trim(),
+          'city': _cityController.text.trim(),
+        },
+        if (_selectedRole == 'merchant') ...{
+          'merchantDetails': {
+            'tinNumberUrl': tinUrl,
+            'nationalIdUrl': nationalIdUrl,
+            'account': {
+              'name': _accountNameController.text.trim(),
+              'number': _accountNumberController.text.trim(),
+              'bankCode': _selectedBankSlug,
             },
           },
-        };
+        },
+      };
 
-        await AuthService.signUp(userData);
-        Navigator.pushNamed(context, '/verify-otp');
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      } finally {
-        setState(() => _isLoading = false);
+      print('SignUp: [${DateTime.now()}] Attempting signup with userData: $userData');
+      final response = await AuthService.signUp(userData);
+      print('SignUp: [${DateTime.now()}] Signup successful, OTP sent to $email');
+      print('SignUp: [${DateTime.now()}] Navigating to verify-otp with email: $email');
+      Navigator.pushNamed(context, '/verify-otp', arguments: email);
+    } catch (e) {
+      print('SignUp: [${DateTime.now()}] Signup failed: $e');
+      String errorMessage = 'Signup failed. Please try again.';
+      if (e.toString().contains('email')) {
+        errorMessage = 'Failed to send OTP email. Check your email address.';
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+        print('SignUp: [${DateTime.now()}] Setting isLoading to false');
+      });
     }
+  } else {
+    print('SignUp: [${DateTime.now()}] Form validation failed');
   }
-
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -276,7 +316,9 @@ class _SignUpPageState extends State<SignUpPage> {
                     onChanged: (value) {
                       setState(() {
                         _selectedRole = value!;
-                        _selectedBankSlug = _banks.isNotEmpty ? _banks[0]['slug'] as String? : null;
+                        _selectedBankSlug = _banks.isNotEmpty
+                            ? _banks[0]['slug'] as String?
+                            : null;
                       });
                     },
                   ),
@@ -287,7 +329,9 @@ class _SignUpPageState extends State<SignUpPage> {
                     onChanged: (value) {
                       setState(() {
                         _selectedRole = value!;
-                        _selectedBankSlug = _banks.isNotEmpty ? _banks[0]['slug'] as String? : null;
+                        _selectedBankSlug = _banks.isNotEmpty
+                            ? _banks[0]['slug'] as String?
+                            : null;
                       });
                     },
                   ),
@@ -298,7 +342,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _pickFile(true),
-                  child: Text(_tinFile == null ? 'Upload TIN Document' : 'TIN Document Selected'),
+                  child: Text(_tinFile == null
+                      ? 'Upload TIN Document'
+                      : 'TIN Document Selected'),
                 ),
                 if (_tinFile != null)
                   Padding(
@@ -311,7 +357,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _pickFile(false),
-                  child: Text(_nationalIdFile == null ? 'Upload National ID Document' : 'National ID Document Selected'),
+                  child: Text(_nationalIdFile == null
+                      ? 'Upload National ID Document'
+                      : 'National ID Document Selected'),
                 ),
                 if (_nationalIdFile != null)
                   Padding(
@@ -328,20 +376,19 @@ class _SignUpPageState extends State<SignUpPage> {
                     labelText: 'Select Bank',
                     border: OutlineInputBorder(),
                   ),
-                  items: _banks
-                      .where((bank) => bank['slug'] != null)
-                      .map((bank) {
-                        return DropdownMenuItem<String>(
-                          value: bank['slug'] as String,
-                          child: Text(bank['name'] as String? ?? 'Unknown Bank'),
-                        );
-                      })
-                      .toList(),
+                  items:
+                      _banks.where((bank) => bank['slug'] != null).map((bank) {
+                    return DropdownMenuItem<String>(
+                      value: bank['slug'] as String,
+                      child: Text(bank['name'] as String? ?? 'Unknown Bank'),
+                    );
+                  }).toList(),
                   onChanged: (value) {
                     setState(() => _selectedBankSlug = value);
                   },
                   validator: (value) {
-                    if (_selectedRole == 'merchant' && (value == null || value.isEmpty)) {
+                    if (_selectedRole == 'merchant' &&
+                        (value == null || value.isEmpty)) {
                       return 'Please select a bank';
                     }
                     return null;
@@ -352,7 +399,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _accountNameController,
                   label: 'Account Name',
                   validator: (value) {
-                    if (_selectedRole == 'merchant' && (value == null || value.isEmpty)) {
+                    if (_selectedRole == 'merchant' &&
+                        (value == null || value.isEmpty)) {
                       return 'Please enter account name';
                     }
                     return null;
@@ -372,8 +420,10 @@ class _SignUpPageState extends State<SignUpPage> {
                         (bank) => bank['slug'] == _selectedBankSlug,
                         orElse: () => {'acct_length': 0},
                       );
-                      final expectedLength = selectedBank['acct_length'] as int? ?? 0;
-                      if (expectedLength == 0 || value.length != expectedLength) {
+                      final expectedLength =
+                          selectedBank['acct_length'] as int? ?? 0;
+                      if (expectedLength == 0 ||
+                          value.length != expectedLength) {
                         return 'Account number must be $expectedLength digits';
                       }
                     }
@@ -439,19 +489,20 @@ Future<List<Map<String, dynamic>>> getBanks() async {
       }
 
       // Extract name, acct_length, and slug from each bank
-      final List<Map<String, dynamic>> banks = List<Map<String, dynamic>>.from(data['data'])
-          .asMap()
-          .entries
-          .map((entry) {
-            final bank = entry.value;
-            return {
-              'name': bank['name'] as String? ?? 'Unknown Bank',
-              'acct_length': bank['acct_length'] as int? ?? 10,
-              'slug': bank['slug'] as String? ?? 'bank_${entry.key}',
-            };
-          })
-          .where((bank) => bank['slug'] != null)
-          .toList();
+      final List<Map<String, dynamic>> banks =
+          List<Map<String, dynamic>>.from(data['data'])
+              .asMap()
+              .entries
+              .map((entry) {
+                final bank = entry.value;
+                return {
+                  'name': bank['name'] as String? ?? 'Unknown Bank',
+                  'acct_length': bank['acct_length'] as int? ?? 10,
+                  'slug': bank['slug'] as String? ?? 'bank_${entry.key}',
+                };
+              })
+              .where((bank) => bank['slug'] != null)
+              .toList();
 
       return banks;
     } else {

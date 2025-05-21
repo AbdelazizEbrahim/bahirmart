@@ -1,5 +1,6 @@
 import 'package:bahirmart/pages/orders_page.dart';
 import 'package:bahirmart/pages/profile_page.dart';
+import 'package:bahirmart/pages/verify_otp_page.dart';
 import 'package:flutter/material.dart';
 import 'package:bahirmart/pages/landing_page.dart';
 import 'package:bahirmart/pages/products_page.dart';
@@ -22,12 +23,11 @@ class AppRouter {
         );
       case '/profile':
         return MaterialPageRoute(
-          builder: (_) =>
-              const ProfilePage(), // Replace with your actual ProfilePage widget
+          builder: (_) => const ProfilePage(),
         );
       case '/orders':
         return MaterialPageRoute(
-          builder: (_) => const OrdersPage(), // Use the OrdersPage widget
+          builder: (_) => const OrdersPage(),
         );
       case '/settings':
         return MaterialPageRoute(
@@ -64,9 +64,10 @@ class AppRouter {
         );
       case '/signin':
         return MaterialPageRoute(builder: (_) => const SignInPage());
-
       case '/signup':
         return MaterialPageRoute(builder: (_) => const SignUpPage());
+      case '/verify-otp':
+        return MaterialPageRoute(builder: (_) => const VerifyOtpPage());
       default:
         return MaterialPageRoute(
             builder: (_) =>

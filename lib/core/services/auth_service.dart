@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For debugPrint
 
 class AuthService {
-  static const String _baseUrl = 'http://10.161.117.48:3001/api';
+  static const String _baseUrl = 'http://192.168.199.56:3001/api';
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
   );
@@ -94,8 +94,11 @@ class AuthService {
         body: jsonEncode(userData),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         debugPrint('Sign-up successful');
+        final email = userData['email'] as String?;
+
+        await sendOtp(email!, 'verify');
       } else {
         throw Exception('Failed to sign up: ${response.body}');
       }
@@ -105,46 +108,66 @@ class AuthService {
     }
   }
 
-  static Future<void> verifyOtp(String otp) async {
+  static Future<void> verifyOtp(String otp, String email) async {
+    print(
+        'AuthService: [${DateTime.now()}] Initiating OTP verification for email: $email');
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/verify-otp'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'otp': otp.trim()}),
+        body: jsonEncode({
+          'otp': otp.trim(),
+          'email': email.trim(),
+        }),
       );
 
+      print(
+          'AuthService: [${DateTime.now()}] OTP verification response status: ${response.statusCode}');
+      print('AuthService: [${DateTime.now()}] Response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['user'] == null) {
-          throw Exception('Invalid response: No user data found');
-        }
-        final user = User.fromJson(data['user']);
         final context = navigatorKey.currentContext;
         if (context == null) {
+          print('AuthService: [${DateTime.now()}] Navigator context is null');
           throw Exception('Navigator context is null');
         }
-        Provider.of<UserProvider>(context, listen: false).setUser(user);
+
+        print('AuthService: [${DateTime.now()}] Redirecting to /signin...');
+        Navigator.pushNamed(context, '/signin');
       } else {
+        print(
+            'AuthService: [${DateTime.now()}] OTP verification failed with status: ${response.statusCode}');
         throw Exception('Failed to verify OTP: ${response.body}');
       }
     } catch (e) {
-      debugPrint('OTP verification error: $e');
+      print('AuthService: [${DateTime.now()}] OTP verification error: $e');
       throw Exception('OTP verification failed: ${e.toString()}');
     }
   }
 
-  static Future<void> resendOtp() async {
+  static Future<void> sendOtp(String email, String type) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/resend-otp'),
+        Uri.parse('$_baseUrl/sendOtp?type=$type'),
         headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
       );
 
-      if (response.statusCode == 200) {
-        debugPrint('OTP resent successfully');
-      } else {
-        throw Exception('Failed to resend OTP: ${response.body}');
+      if (response.statusCode != 200) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to send OTP');
       }
+      debugPrint('OTP sent successfully to $email');
+    } catch (e) {
+      debugPrint('Send OTP error: $e');
+      throw Exception('Failed to send OTP: ${e.toString()}');
+    }
+  }
+
+  static Future<void> resendOtp(String email) async {
+    try {
+      await sendOtp(email, 'verify');
+      debugPrint('OTP resent successfully');
     } catch (e) {
       debugPrint('Resend OTP error: $e');
       throw Exception('Failed to resend OTP: ${e.toString()}');
@@ -180,5 +203,4 @@ class AuthService {
       throw Exception('Failed to fetch banks: ${e.toString()}');
     }
   }
-
 }
