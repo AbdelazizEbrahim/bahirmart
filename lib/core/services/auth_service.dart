@@ -32,14 +32,40 @@ class AuthService {
       await prefs.setString('auth_token', token);
       await prefs.setString('user_email', data['user']['email']);
 
-      final storedToken = prefs.getString('auth_token');
-      if (storedToken != null && storedToken.isNotEmpty) {
-        print('Token stored successfully: $storedToken');
+      print('Token stored successfully: $token');
+
+      // ✅ Fetch full user info from /api/user
+      final userResponse = await http.get(
+        Uri.parse('$_baseUrl/user'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (userResponse.statusCode == 200) {
+        final userData = jsonDecode(userResponse.body);
+
+        final user = User(
+          id: userData['_id'],
+          fullName: userData['fullName'] ?? '',
+          email: userData['email'],
+          password: '',
+          role: userData['role'] ?? 'customer',
+          image: userData['image'] ?? '',
+          isBanned: userData['isBanned'] ?? false,
+          isEmailVerified: userData['isEmailVerified'] ?? true,
+          isDeleted: userData['isDeleted'] ?? false,
+          approvalStatus: userData['approvalStatus'] ?? 'approved',
+        );
+
+        // ✅ Set the user in the provider
+        Provider.of<UserProvider>(context, listen: false).setUser(user);
       } else {
-        print('Failed to store token.');
+        print('Failed to fetch user data: ${userResponse.statusCode}');
       }
 
-      // ✅ Redirect to home after successful login
+      // ✅ Navigate to home after user is set
       Navigator.of(context).pushReplacementNamed('/');
     } else {
       final error = jsonDecode(response.body)['error'] ?? 'Login failed';
