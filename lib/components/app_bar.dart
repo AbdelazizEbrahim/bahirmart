@@ -56,9 +56,9 @@ class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         PopupMenuButton<String>(
           icon: CircleAvatar(
-            backgroundImage: userProvider.user!.image.isNotEmpty
-                ? NetworkImage(userProvider.user!.image)
-                : const AssetImage('assets/placeholder.png') as ImageProvider,
+            backgroundImage: (userProvider.user!.image?.isNotEmpty ?? false)
+                ? NetworkImage(userProvider.user!.image!)
+                : null,
           ),
           onSelected: (value) async {
             switch (value) {

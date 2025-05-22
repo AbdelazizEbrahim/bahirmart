@@ -1,17 +1,47 @@
-import 'package:bahirmart/core/models/user_model.dart';
+import 'package:bahirmart/main.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bahirmart/core/models/user_model.dart';
 import 'package:bahirmart/components/app_bar.dart';
 import 'package:bahirmart/components/bottom_navigation_bar.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
-import 'package:provider/provider.dart';
-import 'package:bahirmart/main.dart';
+import 'package:bahirmart/core/services/profile_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
+
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  bool _isLoading = true;
+  final ProfileService _profileService = ProfileService();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+  }
+
+  Future<void> _fetchUserProfile() async {
+    await _profileService.fetchUserProfile(context);
+    setState(() => _isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserProvider>(context).user;
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: BahirMartAppBar(title: 'Profile'),
+        body: const Center(child: CircularProgressIndicator()),
+        bottomNavigationBar:
+            const BahirMartBottomNavigationBar(currentIndex: 4),
+      );
+    }
 
     if (user == null) {
       return Scaffold(
@@ -35,12 +65,20 @@ class ProfilePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushNamed(context, '/login');
                 },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: const Text('Login'),
               ),
             ],
           ),
         ),
-        bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 4),
+        bottomNavigationBar:
+            const BahirMartBottomNavigationBar(currentIndex: 4),
       );
     }
 
@@ -51,20 +89,40 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Header
             Center(
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: Theme.of(context).primaryColor,
-                    child: Text(
-                      user.fullName[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 32,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: user.image?.isNotEmpty ?? false
+                        ? ClipOval(
+                            child: Image.network(
+                              user.image ?? '',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Text(
+                                user.fullName.isNotEmpty
+                                    ? user.fullName[0].toUpperCase()
+                                    : '',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Text(
+                            user.fullName.isNotEmpty
+                                ? user.fullName[0].toUpperCase()
+                                : '',
+                            style: const TextStyle(
+                              fontSize: 32,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -83,8 +141,6 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-
-            // Profile Actions
             _buildProfileSection(
               context,
               'Account Settings',
@@ -104,8 +160,6 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Other Settings
             _buildProfileSection(
               context,
               'Other Settings',
@@ -137,14 +191,15 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 32),
-
-            // Logout Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement logout
-                  Navigator.pushReplacementNamed(context, '/login');
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('auth_token');
+                  await prefs.remove('user_email');
+                  Provider.of<UserProvider>(context, listen: false).clearUser();
+                  Navigator.pushReplacementNamed(context, '/');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -163,7 +218,8 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileSection(BuildContext context, String title, List<Widget> children) {
+  Widget _buildProfileSection(
+      BuildContext context, String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -201,7 +257,7 @@ class ProfilePage extends StatelessWidget {
     VoidCallback onTap,
   ) {
     return ListTile(
-      leading: Icon(icon),
+      leading: Icon(icon, color: Theme.of(context).primaryColor),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
@@ -211,63 +267,117 @@ class ProfilePage extends StatelessWidget {
   void _showUpdateProfileDialog(BuildContext context, User user) {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: user.fullName);
-    final emailController = TextEditingController(text: user.email);
     final phoneController = TextEditingController(text: user.phoneNumber);
+    final stateController = TextEditingController(text: user.stateName);
+    final cityController = TextEditingController(text: user.cityName);
+    final imageController = TextEditingController(text: user.image);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Update Profile'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Theme.of(context).primaryColor,
+                  child: user.image?.isNotEmpty ?? false
+                      ? ClipOval(
+                          child: Image.network(
+                            user.image ?? '',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Text(
+                              user.fullName.isNotEmpty
+                                  ? user.fullName[0].toUpperCase()
+                                  : '',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Text(
+                          user.fullName.isNotEmpty
+                              ? user.fullName[0].toUpperCase()
+                              : '',
+                          style: const TextStyle(
+                            fontSize: 32,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your full name';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      if (!RegExp(r'^\+?[1-9]\d{1,14}$').hasMatch(value)) {
+                        return 'Please enter a valid phone number';
+                      }
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  return null;
-                },
-              ),
-            ],
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: stateController,
+                  decoration: const InputDecoration(
+                    labelText: 'State',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'City',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: imageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Image URL',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      if (!Uri.parse(value).isAbsolute) {
+                        return 'Please enter a valid URL';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -276,16 +386,19 @@ class ProfilePage extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
-                // TODO: Implement profile update
+                setState(() => _isLoading = true);
+                final profileData = {
+                  'fullName': nameController.text,
+                  'phoneNumber': phoneController.text,
+                  'stateName': stateController.text,
+                  'cityName': cityController.text,
+                  'image': imageController.text,
+                };
+                await _profileService.updateProfile(context, profileData);
+                setState(() => _isLoading = false);
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Profile updated successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
               }
             },
             child: const Text('Update'),
@@ -297,7 +410,7 @@ class ProfilePage extends StatelessWidget {
 
   void _showChangePasswordDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
-    final oldPasswordController = TextEditingController();
+    final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
 
@@ -305,62 +418,64 @@ class ProfilePage extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Change Password'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: oldPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Current Password',
-                  border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: currentPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Current Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your current password';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your current password';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: newPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'New Password',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: newPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a new password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a new password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm New Password',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: confirmPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your new password';
+                    }
+                    if (value != newPasswordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your new password';
-                  }
-                  if (value != newPasswordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -369,16 +484,16 @@ class ProfilePage extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
-                // TODO: Implement password change
+                setState(() => _isLoading = true);
+                final passwordData = {
+                  'currentPassword': currentPasswordController.text,
+                  'newPassword': newPasswordController.text,
+                };
+                await _profileService.changePassword(context, passwordData);
+                setState(() => _isLoading = false);
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Password changed successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
               }
             },
             child: const Text('Change'),

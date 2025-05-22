@@ -24,8 +24,9 @@ void main() async {
 
   if (token != null && token.isNotEmpty) {
     try {
+      final baseUrl = dotenv.env['BASE_URL'];
       final response = await http.get(
-        Uri.parse('http://192.168.35.38:4000/api/user'), // e.g., http://192.168.1.100:4000/api/user
+        Uri.parse('$baseUrl/user'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -45,7 +46,6 @@ void main() async {
           isBanned: data['isBanned'] ?? false,
           isEmailVerified: data['isEmailVerified'] ?? true,
           isDeleted: data['isDeleted'] ?? false,
-          approvalStatus: data['approvalStatus'] ?? 'pending',
         );
 
         // Store updated email in case it changed
@@ -116,13 +116,58 @@ class BahirMartApp extends StatelessWidget {
   }
 }
 
-class UserProvider extends ChangeNotifier {
+class UserProvider with ChangeNotifier {
   User? _user;
 
   User? get user => _user;
 
   void setUser(User? user) {
     _user = user;
+    notifyListeners();
+  }
+
+  void updateUser({
+    String? id,
+    String? fullName,
+    String? email,
+    String? password,
+    String? role,
+    String? image,
+    bool? isBanned,
+    DateTime? bannedAt,
+    String? bannedBy,
+    bool? isEmailVerified,
+    String? phoneNumber,
+    bool? isDeleted,
+    DateTime? trashDate,
+    String? approvalStatus,
+    String? approvedBy,
+    String? otp,
+    DateTime? otpExpires,
+  }) {
+    if (_user != null) {
+      _user = User(
+        id: id ?? _user!.id,
+        fullName: fullName ?? _user!.fullName,
+        email: email ?? _user!.email,
+        password: password ?? _user!.password,
+        role: role ?? _user!.role,
+        image: image ?? _user!.image,
+        isBanned: isBanned ?? _user!.isBanned,
+        bannedBy: bannedBy ?? _user!.bannedBy,
+        isEmailVerified: isEmailVerified ?? _user!.isEmailVerified,
+        phoneNumber: phoneNumber ?? _user!.phoneNumber,
+        isDeleted: isDeleted ?? _user!.isDeleted,
+        trashDate: trashDate ?? _user!.trashDate,
+        otp: otp ?? _user!.otp,
+        otpExpires: otpExpires ?? _user!.otpExpires,
+      );
+      notifyListeners();
+    }
+  }
+
+  void clearUser() {
+    _user = null;
     notifyListeners();
   }
 }

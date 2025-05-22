@@ -10,7 +10,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For debugPrint
 
 class AuthService {
-  static const String _baseUrl = 'http://192.168.35.38:4000/api';
+  static final String _baseUrl =
+      dotenv.env['BASE_URL'] ?? 'http://localhost:3000/api';
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
   );
@@ -56,7 +57,6 @@ class AuthService {
           isBanned: userData['isBanned'] ?? false,
           isEmailVerified: userData['isEmailVerified'] ?? true,
           isDeleted: userData['isDeleted'] ?? false,
-          approvalStatus: userData['approvalStatus'] ?? 'approved',
         );
 
         // ✅ Set the user in the provider
