@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For debugPrint
 
 class AuthService {
-  static const String _baseUrl = 'http://192.168.219.23:3001/api';
+  static const String _baseUrl = 'http://192.168.35.38:4000/api';
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
   );

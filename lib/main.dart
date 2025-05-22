@@ -1,13 +1,14 @@
-import 'package:bahirmart/components/app_bar.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bahirmart/core/models/user_model.dart';
 import 'package:bahirmart/core/navigation/app_router.dart';
 import 'package:bahirmart/theme/app_theme.dart';
 import 'package:bahirmart/core/services/cart_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -18,22 +19,43 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');
-  final email = prefs.getString('user_email');
 
   User? user;
-  if (token != null && email != null) {
-    user = User(
-      id: 'from_token', // Replace with actual user ID if needed
-      fullName: 'Loaded User',
-      email: email,
-      password: '', // Not stored locally
-      role: 'customer',
-      image: 'https://picsum.photos/50/50?random=1',
-      isBanned: false,
-      isEmailVerified: true,
-      isDeleted: false,
-      approvalStatus: 'approved',
-    );
+
+  if (token != null && token.isNotEmpty) {
+    try {
+      final response = await http.get(
+        Uri.parse('http://192.168.35.38:4000/api/user'), // e.g., http://192.168.1.100:4000/api/user
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        user = User(
+          id: data['_id'],
+          fullName: data['fullName'] ?? 'User',
+          email: data['email'],
+          role: data['role'],
+          image: data['image'] ?? 'https://picsum.photos/50/50?random=1',
+          password: '',
+          isBanned: data['isBanned'] ?? false,
+          isEmailVerified: data['isEmailVerified'] ?? true,
+          isDeleted: data['isDeleted'] ?? false,
+          approvalStatus: data['approvalStatus'] ?? 'pending',
+        );
+
+        // Store updated email in case it changed
+        await prefs.setString('user_email', data['email']);
+      } else {
+        print('Failed to fetch user info: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching user info: $e');
+    }
   }
 
   runApp(
@@ -102,19 +124,5 @@ class UserProvider extends ChangeNotifier {
   void setUser(User? user) {
     _user = user;
     notifyListeners();
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: BahirMartAppBar(title: 'BahirMart'),
-      body: Center(
-        child: Text('Welcome to BahirMart'),
-      ),
-    );
   }
 }

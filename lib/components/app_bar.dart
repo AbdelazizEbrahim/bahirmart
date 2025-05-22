@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -59,7 +60,7 @@ class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ? NetworkImage(userProvider.user!.image)
                 : const AssetImage('assets/placeholder.png') as ImageProvider,
           ),
-          onSelected: (value) {
+          onSelected: (value) async {
             switch (value) {
               case 'profile':
                 Navigator.pushNamed(context, '/profile');
@@ -71,8 +72,13 @@ class BahirMartAppBar extends StatelessWidget implements PreferredSizeWidget {
                 Navigator.pushNamed(context, '/settings');
                 break;
               case 'logout':
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('auth_token');
+                await prefs.remove('user_email');
+
                 Provider.of<UserProvider>(context, listen: false).setUser(null);
-                Navigator.pushReplacementNamed(context, '/');
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/', (route) => false);
                 break;
             }
           },
