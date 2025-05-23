@@ -112,32 +112,39 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['_id'] ?? json['id'],
-      merchantDetail: MerchantDetail.fromJson(json['merchantDetail']),
-      productName: json['productName'],
-      category: ProductCategory.fromJson(json['category']),
-      price: json['price'].toDouble(),
-      quantity: json['quantity'],
+      id: json['_id'] ?? json['id'] ?? '',
+      merchantDetail: MerchantDetail.fromJson(json['merchantDetail'] ?? {}),
+      productName: json['productName'] ?? '',
+      category: ProductCategory.fromJson(json['category'] ?? {}),
+      price: (json['price'] is num) ? (json['price'] as num).toDouble() : 0.0,
+      quantity: json['quantity'] ?? 0,
       soldQuantity: json['soldQuantity'] ?? 0,
-      description: json['description'],
-      images: json['images'] != null ? List<String>.from(json['images']) : null,
+      description: json['description'] ?? '',
+      images: json['images'] != null ? List<String>.from(json['images']) : [],
       variant:
-          json['variant'] != null ? List<String>.from(json['variant']) : null,
-      size: json['size'] != null ? List<String>.from(json['size']) : null,
+          json['variant'] != null ? List<String>.from(json['variant']) : [],
+      size: json['size'] != null ? List<String>.from(json['size']) : [],
       brand: json['brand'] ?? 'Hand Made',
-      location: Location.fromJson(json['location']),
+      location: Location.fromJson(json['location'] ?? {}),
       review: json['review'] != null
           ? (json['review'] as List).map((r) => Review.fromJson(r)).toList()
+          : [],
+      delivery: json['delivery'] ?? '',
+      deliveryPrice: (json['deliveryPrice'] is num)
+          ? (json['deliveryPrice'] as num).toDouble()
+          : 0.0,
+      kilogramPerPrice: (json['kilogramPerPrice'] is num)
+          ? (json['kilogramPerPrice'] as num).toDouble()
           : null,
-      delivery: json['delivery'],
-      deliveryPrice: json['deliveryPrice'].toDouble(),
-      kilogramPerPrice: json['kilogramPerPrice']?.toDouble(),
-      kilometerPerPrice: json['kilometerPerPrice']?.toDouble(),
+      kilometerPerPrice: (json['kilometerPerPrice'] is num)
+          ? (json['kilometerPerPrice'] as num).toDouble()
+          : null,
       isBanned: json['isBanned'] ?? false,
       isDeleted: json['isDeleted'] ?? false,
-      trashDate:
-          json['trashDate'] != null ? DateTime.parse(json['trashDate']) : null,
-      createdAt: DateTime.parse(json['createdAt']),
+      trashDate: json['trashDate'] != null
+          ? DateTime.tryParse(json['trashDate'])
+          : null,
+      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       offer: json['offer'] != null ? Offer.fromJson(json['offer']) : null,
     );
   }
@@ -163,9 +170,9 @@ class Offer {
 
   factory Offer.fromJson(Map<String, dynamic> json) {
     return Offer(
-      price: json['price'].toDouble(),
+      price: (json['price'] is num) ? (json['price'] as num).toDouble() : 0.0,
       offerEndDate: json['offerEndDate'] != null
-          ? DateTime.parse(json['offerEndDate'])
+          ? DateTime.tryParse(json['offerEndDate'])
           : null,
     );
   }

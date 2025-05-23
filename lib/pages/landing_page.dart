@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:bahirmart/core/models/user_model.dart';
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart' as carousel
-    hide CarouselController;
+import 'package:carousel_slider/carousel_slider.dart' as carousel hide CarouselController;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:bahirmart/components/ad_card.dart';
 import 'package:bahirmart/components/app_bar.dart';
@@ -16,8 +15,7 @@ import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/ad_model.dart' as ad_model;
 import 'package:bahirmart/core/models/category_model.dart' as cat;
 import 'package:bahirmart/core/models/product_model.dart' as prod_model;
-import 'package:bahirmart/main.dart';
-import 'package:provider/provider.dart';
+import 'package:bahirmart/core/services/landing_service.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -32,25 +30,27 @@ class _LandingPageState extends State<LandingPage> {
   List<ad_model.Ad> _ads = [];
   List<prod_model.Product> _products = [];
   List<cat.Category> _categories = [];
+  Map<String, List<prod_model.Product>> _categoryProducts = {}; // New map for category products
   User? _user;
   final ScrollController _scrollController = ScrollController();
   bool _showBackToTop = false;
   bool _isLoading = true;
 
-  // Add section keys for scrolling
   final Map<String, GlobalKey> _sectionKeys = {
     'best_seller': GlobalKey(),
     'top_rated': GlobalKey(),
     'new_arrival': GlobalKey(),
   };
 
-  // Add category section keys
   late final Map<String, GlobalKey> _categorySectionKeys;
+
+  final LandingService _landingService = LandingService();
 
   @override
   void initState() {
     super.initState();
     _fetchData();
+    _fetchAds();
     _scrollController.addListener(_scrollListener);
   }
 
@@ -100,216 +100,22 @@ class _LandingPageState extends State<LandingPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController.removeListener(_scrollListener);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  // Mock API Calls
-  Future<List<prod_model.Product>> _fetchProducts(String type) async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-
-    final mockProducts = List.generate(20, (index) {
-      final catIndex = index % 5;
-      final hasOffer = index % 5 == 0 || index % 7 == 0;
-
-      return prod_model.Product(
-        id: 'product_${index + 1}',
-        merchantDetail: prod_model.MerchantDetail(
-          merchantId: 'merchant_${catIndex + 1}',
-          merchantName: [
-            'TechTrend',
-            'StyleHub',
-            'HomeHaven',
-            'SportZone',
-            'BookNook'
-          ][catIndex],
-          merchantEmail: 'merchant${catIndex + 1}@bahirmart.com',
-        ),
-        productName: [
-          'Wireless Earbuds',
-          'Denim Jeans',
-          'Wooden Coffee Table',
-          'Yoga Mat',
-          'Historical Fiction',
-          'Smart Watch',
-          'Silk Scarf',
-          'Garden Tools Set',
-          'Soccer Ball',
-          'Cookbook',
-          'Bluetooth Speaker',
-          'Sneakers',
-          'Decorative Lamp',
-          'Fitness Tracker',
-          'Mystery Novel',
-          'Laptop Stand',
-          'Sunglasses',
-          'Indoor Plant',
-          'Swimming Goggles',
-          'Poetry Collection',
-        ][index],
-        category: prod_model.ProductCategory(
-          categoryId: 'cat_${catIndex + 1}',
-          categoryName: [
-            'Electronics',
-            'Fashion',
-            'Home & Garden',
-            'Sports',
-            'Books'
-          ][catIndex],
-        ),
-        price: 19.99 + index * 10,
-        quantity: 100 - index * 2,
-        soldQuantity: index * 5,
-        description: 'High-quality ${[
-          'earbuds with noise cancellation',
-          'jeans with slim fit',
-          'table with minimalist design',
-          'mat for yoga enthusiasts',
-          'novel with rich storytelling',
-          'watch with fitness tracking',
-          'scarf with elegant design',
-          'tools for gardening',
-          'ball for soccer matches',
-          'recipes for home cooking',
-          'speaker with deep bass',
-          'sneakers for daily wear',
-          'lamp for cozy ambiance',
-          'tracker for workouts',
-          'novel with suspenseful plot',
-          'stand for ergonomic setup',
-          'sunglasses with UV protection',
-          'plant for home decor',
-          'goggles for swimming',
-          'poetry with deep emotions'
-        ][index]}.',
-        images: ['https://picsum.photos/150/150?random=${index + 1}'],
-        variant: [
-          'Color: ${['Blue', 'Black', 'Brown', 'Green', 'Red'][catIndex]}'
-        ],
-        size: [
-          '${['Standard', 'L', 'Medium', 'One Size', 'Paperback'][catIndex]}'
-        ],
-        brand: [
-          'TechBrand',
-          'StyleCo',
-          'HomeCraft',
-          'SportPro',
-          'LitPress'
-        ][catIndex],
-        location: prod_model.Location(
-          type: 'Point',
-          coordinates: [38.8951 + index * 0.005, -77.0364 + index * 0.005],
-        ),
-        review: [
-          prod_model.Review(
-            customerId: 'cust_${index + 1}',
-            comment: 'Really satisfied with this!',
-            rating: 3 + (index % 3),
-            createdDate: DateTime.now().subtract(Duration(days: index + 1)),
-          ),
-        ],
-        delivery: ['PERPIECE', 'PERKG', 'FREE', 'PERKM'][index % 4],
-        deliveryPrice: 4.99,
-        kilogramPerPrice: index % 2 == 0 ? 1.5 : null,
-        kilometerPerPrice: index % 3 == 0 ? 2.0 : null,
-        isBanned: false,
-        isDeleted: false,
-        createdAt: DateTime.now().subtract(Duration(days: index)),
-        offer: hasOffer
-            ? prod_model.Offer(
-                price: (19.99 + index * 10) * 0.8,
-                offerEndDate:
-                    DateTime.now().add(Duration(days: 7 + index % 14)),
-              )
-            : null,
-      );
-    });
-
-    // Sort products based on type
-    List<prod_model.Product> sortedProducts;
-    switch (type) {
-      case 'best_seller':
-        sortedProducts = mockProducts
-          ..sort((a, b) => b.soldQuantity.compareTo(a.soldQuantity));
-        break;
-      case 'top_rated':
-        sortedProducts = mockProducts
-          ..sort((a, b) => (b.review?.first.rating ?? 0)
-              .compareTo(a.review?.first.rating ?? 0));
-        break;
-      case 'new_arrival':
-        sortedProducts = mockProducts
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        break;
-      default:
-        sortedProducts = mockProducts;
-    }
-
-    return sortedProducts;
-  }
-
-  Future<List<prod_model.Product>> _fetchProductsByCategory(
-      String categoryId) async {
-    final allProducts = await _fetchProducts('all');
-    return allProducts
-        .where((p) => p.category.categoryId == categoryId)
-        .toList();
-  }
-
-  Future<List<cat.Category>> _fetchCategories() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return [
-      cat.Category(
-        id: 'cat_1',
-        name: 'Electronics',
-        description: 'Gadgets and tech accessories',
-        createdBy: 'admin',
-        isDeleted: false,
-      ),
-      cat.Category(
-        id: 'cat_2',
-        name: 'Fashion',
-        description: 'Clothing and accessories',
-        createdBy: 'admin',
-        isDeleted: false,
-      ),
-      cat.Category(
-        id: 'cat_3',
-        name: 'Home & Garden',
-        description: 'Furniture and decor',
-        createdBy: 'admin',
-        isDeleted: false,
-      ),
-      cat.Category(
-        id: 'cat_4',
-        name: 'Sports',
-        description: 'Equipment and activewear',
-        createdBy: 'admin',
-        isDeleted: false,
-      ),
-      cat.Category(
-        id: 'cat_5',
-        name: 'Books',
-        description: 'Novels and educational books',
-        createdBy: 'admin',
-        isDeleted: false,
-      ),
-    ];
-  }
-
   Future<void> _fetchData() async {
     try {
       setState(() => _isLoading = true);
+      final data = await _landingService.fetchData();
+      final categories = data['categories'] as List<cat.Category>;
+      final categoryProducts = <String, List<prod_model.Product>>{};
 
-      final categories = await _fetchCategories();
-      final products = await _fetchProducts('best_seller');
+      // Fetch products for each category
+      for (var category in categories) {
+        final response = await _landingService.fetchProductsByCategory(categoryId: category.id);
+        categoryProducts[category.id] = response.products;
+      }
 
       setState(() {
         _categories = categories;
-        _products = products.take(12).toList();
+        _categoryProducts = categoryProducts;
         _categorySectionKeys = {
           for (var category in _categories) category.id: GlobalKey(),
         };
@@ -318,6 +124,23 @@ class _LandingPageState extends State<LandingPage> {
     } catch (e) {
       print('Error fetching data: $e');
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load data: $e')),
+      );
+    }
+  }
+
+  Future<void> _fetchAds() async {
+    try {
+      final ads = await _landingService.fetchAds();
+      setState(() {
+        _ads = ads;
+      });
+    } catch (e) {
+      print('Error fetching ads: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load ads: $e')),
+      );
     }
   }
 
@@ -333,6 +156,13 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const BahirMartAppBar(title: 'BahirMart'),
@@ -344,7 +174,23 @@ class _LandingPageState extends State<LandingPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const custom.SearchBar(),
-                  // Labels for Best Seller, Top Rated, and New Arrival
+                  if (_ads.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                      child: carousel.CarouselSlider(
+                        options: carousel.CarouselOptions(
+                          height: 200.0,
+                          autoPlay: true,
+                          autoPlayInterval: const Duration(seconds: 3),
+                          enlargeCenterPage: true,
+                          aspectRatio: 16 / 9,
+                          viewportFraction: 0.8,
+                        ),
+                        items: _ads.map((ad) {
+                          return AdCard(ad: ad);
+                        }).toList(),
+                      ),
+                    ),
                   SizedBox(
                     height: 50,
                     child: ListView(
@@ -399,7 +245,6 @@ class _LandingPageState extends State<LandingPage> {
                       ],
                     ),
                   ),
-                  // Categories at the top
                   SizedBox(
                     height: 50,
                     child: ListView.builder(
@@ -429,7 +274,6 @@ class _LandingPageState extends State<LandingPage> {
                       },
                     ),
                   ),
-                  // Best Seller Section
                   Container(
                     key: _sectionKeys['best_seller'],
                     padding: const EdgeInsets.all(AppSizes.paddingMedium),
@@ -442,7 +286,7 @@ class _LandingPageState extends State<LandingPage> {
                         ),
                         const SizedBox(height: 16),
                         FutureBuilder<List<prod_model.Product>>(
-                          future: _fetchProducts('best_seller'),
+                          future: _landingService.fetchBestSellers(),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
@@ -470,7 +314,6 @@ class _LandingPageState extends State<LandingPage> {
                       ],
                     ),
                   ),
-                  // Top Rated Section
                   Container(
                     key: _sectionKeys['top_rated'],
                     padding: const EdgeInsets.all(AppSizes.paddingMedium),
@@ -483,7 +326,7 @@ class _LandingPageState extends State<LandingPage> {
                         ),
                         const SizedBox(height: 16),
                         FutureBuilder<List<prod_model.Product>>(
-                          future: _fetchProducts('top_rated'),
+                          future: _landingService.fetchTopRated(),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
@@ -511,7 +354,6 @@ class _LandingPageState extends State<LandingPage> {
                       ],
                     ),
                   ),
-                  // New Arrivals Section
                   Container(
                     key: _sectionKeys['new_arrival'],
                     padding: const EdgeInsets.all(AppSizes.paddingMedium),
@@ -524,7 +366,7 @@ class _LandingPageState extends State<LandingPage> {
                         ),
                         const SizedBox(height: 16),
                         FutureBuilder<List<prod_model.Product>>(
-                          future: _fetchProducts('new_arrival'),
+                          future: _landingService.fetchNewArrivals(),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
@@ -552,8 +394,8 @@ class _LandingPageState extends State<LandingPage> {
                       ],
                     ),
                   ),
-                  // Category Sections
                   ..._categories.map((category) {
+                    final products = _categoryProducts[category.id] ?? [];
                     return Container(
                       key: _categorySectionKeys[category.id],
                       padding: const EdgeInsets.all(AppSizes.paddingMedium),
@@ -575,32 +417,19 @@ class _LandingPageState extends State<LandingPage> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          FutureBuilder<List<prod_model.Product>>(
-                            future: _fetchProductsByCategory(category.id),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                              if (snapshot.hasError) {
-                                return Center(
-                                    child: Text('Error: ${snapshot.error}'));
-                              }
-                              final products = snapshot.data ?? [];
-                              return MasonryGridView.count(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                itemCount: products.length,
-                                itemBuilder: (context, index) {
-                                  return ProductCard(product: products[index]);
-                                },
-                              );
-                            },
-                          ),
+                          products.isEmpty
+                              ? const Center(child: Text('No products available'))
+                              : MasonryGridView.count(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  itemCount: products.length,
+                                  itemBuilder: (context, index) {
+                                    return ProductCard(product: products[index]);
+                                  },
+                                ),
                         ],
                       ),
                     );

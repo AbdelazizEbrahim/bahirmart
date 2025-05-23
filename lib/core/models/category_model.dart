@@ -14,4 +14,15 @@ class Category {
     required this.isDeleted,
     this.trashDate,
   });
+
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      createdBy: json['createdBy'] ?? '',
+      isDeleted: json['isDeleted'] ?? false,
+      trashDate: json['trashDate'] != null ? DateTime.parse(json['trashDate']) : null,
+    );
+  }
 }

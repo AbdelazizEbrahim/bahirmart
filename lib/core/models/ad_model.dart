@@ -30,6 +30,24 @@ class Ad {
     required this.adRegion,
     required this.location,
   });
+  factory Ad.fromJson(Map<String, dynamic> json) {
+    return Ad(
+      id: json['_id'] ?? '',
+      product: Product.fromJson(json['product'] ?? {}),
+      merchantDetail: MerchantDetail.fromJson(json['merchantDetail'] ?? {}),
+      startsAt: DateTime.tryParse(json['startsAt'] ?? '') ?? DateTime.now(),
+      endsAt: DateTime.tryParse(json['endsAt'] ?? '') ?? DateTime.now(),
+      adPrice:
+          (json['adPrice'] is num) ? (json['adPrice'] as num).toDouble() : 0.0,
+      txRef: json['txRef'] ?? '',
+      approvalStatus: json['approvalStatus'] ?? '',
+      paymentStatus: json['paymentStatus'] ?? '',
+      isActive: json['isActive'] ?? false,
+      isHome: json['isHome'] ?? false,
+      adRegion: json['adRegion'] ?? '',
+      location: Location.fromJson(json['location'] ?? {}),
+    );
+  }
 }
 
 class MerchantDetail {
@@ -42,11 +60,30 @@ class MerchantDetail {
     required this.merchantName,
     required this.merchantEmail,
   });
+
+  factory MerchantDetail.fromJson(Map<String, dynamic> json) {
+    return MerchantDetail(
+      merchantId: json['merchantId'] ?? '',
+      merchantName: json['merchantName'] ?? '',
+      merchantEmail: json['merchantEmail'] ?? '',
+    );
+  }
 }
 
 class Location {
   final String type;
   final List<double> coordinates;
 
-  Location({required this.type, required this.coordinates});
+  Location({
+    required this.type,
+    required this.coordinates,
+  });
+
+  factory Location.fromJson(Map<String, dynamic> json) {
+    return Location(
+      type: json['type'] ?? '',
+      coordinates:
+          List<double>.from(json['coordinates'].map((x) => x.toDouble())),
+    );
+  }
 }
