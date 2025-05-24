@@ -192,8 +192,10 @@ class LandingService {
     double? lng,
     int limit = 1000,
   }) async {
-    
     try {
+      // final position = await _getUserLocation();
+      // final lat = position?.latitude;
+      // final lng = position?.longitude;
       print('Starting fetchProductsByCategory...');
       print(
           'Parameters: categoryId=$categoryId, lat=$lat, lng=$lng, limit=$limit');
@@ -282,6 +284,70 @@ class LandingService {
     }
   }
 
+  Future<ProductResponse> fetchProducts({
+    double? lat,
+    double? lng,
+    int limit = 1000,
+  }) async {
+    final position = await _getUserLocation();
+    final lat = position?.latitude;
+    final lng = position?.longitude;
+
+    try {
+      print('Starting fetchProductsByCategory...');
+      print('Parameters lat=$lat, lng=$lng, limit=$limit');
+
+      // Build query parameters
+      final queryParams = {
+        'limit': limit.toString(),
+        if (lat != null) 'lat': lat.toString(),
+        if (lng != null) 'lng': lng.toString(),
+      };
+      print('Query parameters built: $queryParams');
+
+      // Construct the URL with query parameters
+      final uri = Uri.parse('$_baseUrl/fetchProducts')
+          .replace(queryParameters: queryParams);
+      print('Constructed URI: $uri');
+
+      // Make the HTTP GET request
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+      print('HTTP GET request sent. Status code: ${response.statusCode}');
+
+      // Handle the response
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Response body decoded: $data');
+
+        // Check if the 'products' field exists and is a list
+        if (data['products'] is List) {
+          print('Products list found. Mapping to Product model...');
+          return ProductResponse(
+            products: List<prod_model.Product>.from(
+              data['products'].map((item) => prod_model.Product.fromJson(item)),
+            ),
+            total: data['total'] ?? 0,
+            message: data['message'] ?? '',
+          );
+        } else {
+          print('Error: Invalid response format: No products data found');
+          throw Exception('Invalid response format: No products data found');
+        }
+      } else {
+        print('Error: Failed to fetch products: ${response.body}');
+        throw Exception('Failed to fetch products: ${response.body}');
+      }
+    } catch (e) {
+      print('Exception caught: $e');
+      throw Exception('Error fetching products: $e');
+    }
+  }
+
   Future<List<ad_model.Ad>> fetchAds({
     String? center, // Format: "lat-lng" (e.g., "40.7128-74.0060")
     int? radius, // In meters, default is 50000
@@ -293,6 +359,7 @@ class LandingService {
       // If center is not provided, attempt to get user's location
       if (center == null) {
         final position = await _getUserLocation();
+        await fetchProducts();
         if (position != null) {
           center = '${position.latitude}-${position.longitude}';
         } else {
@@ -343,10 +410,10 @@ class LandingService {
   Future<Map<String, dynamic>> fetchData() async {
     try {
       final categories = await fetchCategories();
-      final products = await fetchBestSellers();
+      final products = await fetchProducts();
       return {
         'categories': categories,
-        'products': products.take(12).toList(),
+        'products': products.products.take(12).toList(),
       };
     } catch (e) {
       throw Exception('Error fetching initial data: $e');
