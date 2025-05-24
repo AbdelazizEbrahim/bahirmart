@@ -55,9 +55,19 @@ class Auction {
       category: json['category'] as String? ?? '',
       description: json['description'] as String? ?? '',
       condition: json['condition'] as String? ?? '',
-      startTime: json['startTime'] != null ? DateTime.tryParse(json['startTime'] as String) : null,
-      endTime: json['endTime'] != null ? DateTime.tryParse(json['endTime'] as String) : null,
-      itemImg: json['itemImg'] != null ? List<String>.from(json['itemImg'] as List) : [],
+      startTime: json['startTime'] != null
+          ? DateTime.tryParse(json['startTime'] as String)
+          : null,
+      endTime: json['endTime'] != null
+          ? DateTime.tryParse(json['endTime'] as String)
+          : null,
+      itemImg: () {
+        final img = json['itemImg'];
+        if (img == null) return <String>[];
+        if (img is String) return [img];
+        if (img is List) return List<String>.from(img);
+        return <String>[];
+      }(),
       startingPrice: (json['startingPrice'] as num?)?.toDouble() ?? 0.0,
       reservedPrice: (json['reservedPrice'] as num?)?.toDouble() ?? 0.0,
       bidIncrement: (json['bidIncrement'] as num?)?.toDouble() ?? 1.0,
@@ -70,8 +80,12 @@ class Auction {
       totalQuantity: json['totalQuantity'] as int? ?? 1,
       remainingQuantity: json['remainingQuantity'] as int? ?? 1,
       buyByParts: json['buyByParts'] as bool? ?? false,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:bahirmart/components/app_bar.dart';
 import 'package:bahirmart/components/bottom_navigation_bar.dart';
 import 'package:bahirmart/core/models/auction_model.dart';
 import 'package:bahirmart/pages/auction_detail_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart';
+import 'package:bahirmart/core/services/auction_service.dart';
 
 final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
 
@@ -33,10 +31,15 @@ class _AuctionListPageState extends State<AuctionListPage> {
   bool _isLoading = false;
   bool _hasMore = true;
   static const int _limit = 12;
+  final AuctionService _auctionService = AuctionService();
+  late TextEditingController _minPriceController;
+  late TextEditingController _maxPriceController;
 
   @override
   void initState() {
     super.initState();
+    _minPriceController = TextEditingController();
+    _maxPriceController = TextEditingController();
     _fetchAuctions();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
@@ -53,32 +56,14 @@ class _AuctionListPageState extends State<AuctionListPage> {
 
     setState(() => _isLoading = true);
     try {
-      final response = await http.get(
-        Uri.parse(
-            'http://192.168.199.230:3001/api/fetchAuctions?page=$_currentPage&limit=$_limit'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] != true || data['data'] == null) {
-          throw Exception('Invalid response format');
-        }
-
-        final List<Auction> newAuctions = (data['data'] as List)
-            .map((json) => Auction.fromJson(json))
-            .toList();
-
-        setState(() {
-          _auctions.addAll(newAuctions);
-          _filteredAuctions = _auctions;
-          _currentPage++;
-          _hasMore = newAuctions.length == _limit;
-          _filterAuctions();
-        });
-      } else {
-        throw Exception('Failed to fetch auctions: ${response.body}');
-      }
+      final newAuctions = await _auctionService.fetchAuctions(_currentPage, _limit);
+      setState(() {
+        _auctions.addAll(newAuctions);
+        _filteredAuctions = _auctions;
+        _currentPage++;
+        _hasMore = newAuctions.length == _limit;
+        _filterAuctions();
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,13 +87,11 @@ class _AuctionListPageState extends State<AuctionListPage> {
           }
         }
 
-        if (_selectedCategory != 'All' &&
-            auction.category != _selectedCategory) {
+        if (_selectedCategory != 'All' && auction.category != _selectedCategory) {
           return false;
         }
 
-        if (_selectedCondition != 'All' &&
-            auction.condition != _selectedCondition) {
+        if (_selectedCondition != 'All' && auction.condition != _selectedCondition) {
           return false;
         }
 
@@ -123,6 +106,36 @@ class _AuctionListPageState extends State<AuctionListPage> {
 
         return true;
       }).toList();
+    });
+  }
+
+  List<String> get _uniqueCategories {
+    final categories = _auctions
+        .map((auction) => auction.category ?? 'Unknown')
+        .toSet()
+        .toList();
+    categories.insert(0, 'All');
+    return categories;
+  }
+
+  void _applyPriceFilter() {
+    final minText = _minPriceController.text;
+    final maxText = _maxPriceController.text;
+
+    final min = double.tryParse(minText) ?? 0.0;
+    final max = double.tryParse(maxText) ?? double.maxFinite;
+
+    if (min > max) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Min price cannot be greater than max price')),
+      );
+      return;
+    }
+
+    setState(() {
+      _minPrice = min;
+      _maxPrice = max;
+      _filterAuctions();
     });
   }
 
@@ -192,7 +205,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     children: [
                       _buildFilterChip(
                         'Category',
-                        ['All', 'Electronics', 'Fashion', 'Home', 'Sports'],
+                        _uniqueCategories,
                         _selectedCategory,
                         (value) {
                           setState(() {
@@ -226,31 +239,37 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(
-                        'Price Range: \$${_minPrice.toStringAsFixed(2)} - \$${_maxPrice.toStringAsFixed(2)}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      RangeSlider(
-                        values: RangeValues(_minPrice, _maxPrice),
-                        min: 0,
-                        max: 1000000,
-                        divisions: 100,
-                        labels: RangeLabels(
-                          '\$${_minPrice.toStringAsFixed(2)}',
-                          '\$${_maxPrice.toStringAsFixed(2)}',
+                      Expanded(
+                        child: TextField(
+                          controller: _minPriceController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Min Price',
+                            prefixText: '\$',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
-                        onChanged: (values) {
-                          setState(() {
-                            _minPrice = values.start;
-                            _maxPrice = values.end;
-                            _filterAuctions();
-                          });
-                        },
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _maxPriceController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Max Price',
+                            prefixText: '\$',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _applyPriceFilter,
+                    child: const Text('Apply Price Filter'),
                   ),
                 ],
               ],
@@ -576,66 +595,31 @@ class _AuctionListPageState extends State<AuctionListPage> {
     );
   }
 
-  void _placeBid(Auction auction, double bidAmount) {
-    _mockApiCall(
-      'placeBid',
-      {
-        'auctionId': auction.id ?? '',
-        'bidAmount': bidAmount,
-      },
-      (response) {
-        setState(() {
-          final index = _auctions.indexWhere((a) => a.id == auction.id);
-          if (index != -1) {
-            final updatedAuction = Auction(
-              id: auction.id,
-              auctionTitle: auction.auctionTitle,
-              merchantName: auction.merchantName,
-              category: auction.category,
-              description: auction.description,
-              condition: auction.condition,
-              startTime: auction.startTime,
-              endTime: auction.endTime,
-              itemImg: auction.itemImg,
-              startingPrice: bidAmount,
-              reservedPrice: auction.reservedPrice,
-              bidIncrement: auction.bidIncrement,
-              rejectionReason: auction.rejectionReason,
-              status: auction.status,
-              adminApproval: auction.adminApproval,
-              paymentDuration: auction.paymentDuration,
-              totalQuantity: auction.totalQuantity,
-              remainingQuantity: auction.remainingQuantity,
-              buyByParts: auction.buyByParts,
-              createdAt: auction.createdAt,
-              updatedAt: DateTime.now(),
-            );
-            _auctions[index] = updatedAuction;
-            _filterAuctions();
-          }
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Bid placed successfully: ${currencyFormat.format(bidAmount)}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      },
-    );
-  }
-
-  void _mockApiCall(String endpoint, Map<String, dynamic> data,
-      Function(Map<String, dynamic>) onSuccess) {
-    Future.delayed(const Duration(milliseconds: 800), () {
-      final response = {
-        'success': true,
-        'message': 'Operation completed successfully',
-        'data': data,
-      };
-      onSuccess(response);
-    });
+  void _placeBid(Auction auction, double bidAmount) async {
+    try {
+      final updatedAuction = await _auctionService.placeBid(auction.id!, bidAmount);
+      setState(() {
+        final index = _auctions.indexWhere((a) => a.id == auction.id);
+        if (index != -1) {
+          _auctions[index] = updatedAuction;
+          _filterAuctions();
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Bid placed successfully: ${currencyFormat.format(bidAmount)}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error placing bid: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Color _getStatusColor(String? status) {
@@ -657,6 +641,8 @@ class _AuctionListPageState extends State<AuctionListPage> {
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
     super.dispose();
   }
 }
