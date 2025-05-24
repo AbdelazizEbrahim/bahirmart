@@ -1,17 +1,16 @@
 import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bahirmart/core/models/product_model.dart' as prod_model;
 import 'package:bahirmart/core/models/category_model.dart' as cat;
 import 'package:bahirmart/core/models/ad_model.dart' as ad_model;
-import 'package:geolocator/geolocator.dart';
 
 class LandingService {
-  // Base URL for the API
+  // Base URL for the API (replace with your actual API base URL)
   static final String? _baseUrl = dotenv.env['BASE_URL'];
 
-  /// Helper method to fetch the user's current location with permission handling
   Future<Position?> _getUserLocation() async {
     try {
       print('Checking if location services are enabled...');
@@ -20,9 +19,7 @@ class LandingService {
         print('Location services are disabled.');
         throw Exception('Location services are disabled.');
       }
-      print('Location services are enabled.');
 
-      print('Checking location permission...');
       LocationPermission permission = await Geolocator.checkPermission();
       print('Current permission status: $permission');
 
@@ -55,25 +52,23 @@ class LandingService {
   }
 
   Future<List<prod_model.Product>> fetchBestSellers() async {
+    print('➡️ Fetching best sellers...');
     try {
-      // Fetch user location
-      Position? position = await _getUserLocation();
-      double? lat = position?.latitude;
-      double? lng = position?.longitude;
+      final position = await _getUserLocation();
+      final lat = position?.latitude;
+      final lng = position?.longitude;
 
-      // Build query parameters with lat and lng if available
-      final queryParams = {
-        'type': 'bestSellers',
-        'page': '1',
-        'limit': '12',
-        if (lat != null) 'lat': lat.toString(),
-        if (lng != null) 'lng': lng.toString(),
-      };
+      final uri = Uri.parse('$_baseUrl/homePageFilter').replace(
+        queryParameters: {
+          'type': 'bestSellers',
+          'page': '1',
+          'limit': '12',
+          if (lat != null) 'lat': lat.toString(),
+          if (lng != null) 'lng': lng.toString(),
+        },
+      );
 
-      // Construct the URL with query parameters
-      final uri = Uri.parse('$_baseUrl/homePageFilter')
-          .replace(queryParameters: queryParams);
-
+      print('🌐 Sending GET request to: $uri');
       final response = await http.get(
         uri,
         headers: {
@@ -81,9 +76,11 @@ class LandingService {
         },
       );
 
+      print('📥 Status code: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['products'] is List) {
+          print('✅ Best sellers fetched successfully.');
           return List<prod_model.Product>.from(
             data['products'].map((item) => prod_model.Product.fromJson(item)),
           );
@@ -94,30 +91,29 @@ class LandingService {
         throw Exception('Failed to fetch best sellers: ${response.body}');
       }
     } catch (e) {
+      print('🔥 Error: $e');
       throw Exception('Error fetching best sellers: $e');
     }
   }
 
   Future<List<prod_model.Product>> fetchTopRated() async {
+    print('➡️ Fetching top-rated products...');
     try {
-      // Fetch user location
-      Position? position = await _getUserLocation();
-      double? lat = position?.latitude;
-      double? lng = position?.longitude;
+      final position = await _getUserLocation();
+      final lat = position?.latitude;
+      final lng = position?.longitude;
 
-      // Build query parameters with lat and lng if available
-      final queryParams = {
-        'type': 'topRated',
-        'page': '1',
-        'limit': '12',
-        if (lat != null) 'lat': lat.toString(),
-        if (lng != null) 'lng': lng.toString(),
-      };
+      final uri = Uri.parse('$_baseUrl/homePageFilter').replace(
+        queryParameters: {
+          'type': 'topRated',
+          'page': '1',
+          'limit': '12',
+          if (lat != null) 'lat': lat.toString(),
+          if (lng != null) 'lng': lng.toString(),
+        },
+      );
 
-      // Construct the URL with query parameters
-      final uri = Uri.parse('$_baseUrl/homePageFilter')
-          .replace(queryParameters: queryParams);
-
+      print('🌐 Sending GET request to: $uri');
       final response = await http.get(
         uri,
         headers: {
@@ -125,9 +121,11 @@ class LandingService {
         },
       );
 
+      print('📥 Status code: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['products'] is List) {
+          print('✅ Top-rated products fetched successfully.');
           return List<prod_model.Product>.from(
             data['products'].map((item) => prod_model.Product.fromJson(item)),
           );
@@ -138,30 +136,29 @@ class LandingService {
         throw Exception('Failed to fetch top-rated products: ${response.body}');
       }
     } catch (e) {
+      print('🔥 Error: $e');
       throw Exception('Error fetching top-rated products: $e');
     }
   }
 
   Future<List<prod_model.Product>> fetchNewArrivals() async {
+    print('➡️ Fetching new arrivals...');
     try {
-      // Fetch user location
-      Position? position = await _getUserLocation();
-      double? lat = position?.latitude;
-      double? lng = position?.longitude;
+      final position = await _getUserLocation();
+      final lat = position?.latitude;
+      final lng = position?.longitude;
 
-      // Build query parameters with lat and lng if available
-      final queryParams = {
-        'type': 'latestProducts',
-        'page': '1',
-        'limit': '12',
-        if (lat != null) 'lat': lat.toString(),
-        if (lng != null) 'lng': lng.toString(),
-      };
+      final uri = Uri.parse('$_baseUrl/homePageFilter').replace(
+        queryParameters: {
+          'type': 'latestProducts',
+          'page': '1',
+          'limit': '12',
+          if (lat != null) 'lat': lat.toString(),
+          if (lng != null) 'lng': lng.toString(),
+        },
+      );
 
-      // Construct the URL with query parameters
-      final uri = Uri.parse('$_baseUrl/homePageFilter')
-          .replace(queryParameters: queryParams);
-
+      print('🌐 Sending GET request to: $uri');
       final response = await http.get(
         uri,
         headers: {
@@ -169,9 +166,11 @@ class LandingService {
         },
       );
 
+      print('📥 Status code: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['products'] is List) {
+          print('✅ New arrivals fetched successfully.');
           return List<prod_model.Product>.from(
             data['products'].map((item) => prod_model.Product.fromJson(item)),
           );
@@ -182,6 +181,7 @@ class LandingService {
         throw Exception('Failed to fetch new arrivals: ${response.body}');
       }
     } catch (e) {
+      print('🔥 Error: $e');
       throw Exception('Error fetching new arrivals: $e');
     }
   }
@@ -192,26 +192,18 @@ class LandingService {
     double? lng,
     int limit = 1000,
   }) async {
+    
     try {
       print('Starting fetchProductsByCategory...');
       print(
           'Parameters: categoryId=$categoryId, lat=$lat, lng=$lng, limit=$limit');
 
-      // If lat and lng are not provided, try to fetch the user's location
-      double? finalLat = lat;
-      double? finalLng = lng;
-      if (finalLat == null || finalLng == null) {
-        Position? position = await _getUserLocation();
-        finalLat = finalLat ?? position?.latitude;
-        finalLng = finalLng ?? position?.longitude;
-      }
-
       // Build query parameters
       final queryParams = {
         'limit': limit.toString(),
         if (categoryId != null) 'category': categoryId,
-        if (finalLat != null) 'lat': finalLat.toString(),
-        if (finalLng != null) 'lng': finalLng.toString(),
+        if (lat != null) 'lat': lat.toString(),
+        if (lng != null) 'lng': lng.toString(),
       };
       print('Query parameters built: $queryParams');
 
@@ -295,15 +287,16 @@ class LandingService {
     int? radius, // In meters, default is 50000
     int page = 1,
     int limit = 5,
-    String? status, // e.g., "APPROVED"
+    bool? isHome,
   }) async {
     try {
-      // If center is not provided, try to fetch the user's location
-      String? finalCenter = center;
-      if (finalCenter == null) {
-        Position? position = await _getUserLocation();
+      // If center is not provided, attempt to get user's location
+      if (center == null) {
+        final position = await _getUserLocation();
         if (position != null) {
-          finalCenter = '${position.latitude}-${position.longitude}';
+          center = '${position.latitude}-${position.longitude}';
+        } else {
+          throw Exception('User location unavailable.');
         }
       }
 
@@ -311,9 +304,10 @@ class LandingService {
       final queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
-        if (status != null) 'status': status,
-        if (finalCenter != null) 'center': finalCenter,
-        if (radius != null) 'radius': radius.toString(),
+        'center': center,
+        'radius': (radius ?? 50000).toString(), // Default radius
+        'isHome':
+            isHome?.toString() ?? '', // Always include isHome, even if null
       };
 
       // Construct the URL with query parameters
@@ -331,8 +325,6 @@ class LandingService {
       // Handle the response
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        // Check if the 'ads' field exists and is a list
         if (data['ads'] is List) {
           return List<ad_model.Ad>.from(
             data['ads'].map((item) => ad_model.Ad.fromJson(item)),
