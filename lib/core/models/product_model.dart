@@ -84,7 +84,7 @@ class Product {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      '_id': id,
       'merchantDetail': merchantDetail.toJson(),
       'productName': productName,
       'category': category.toJson(),
@@ -111,8 +111,15 @@ class Product {
   }
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    List<String> parseStringList(dynamic data) {
+      if (data == null) return [];
+      if (data is String) return [data];
+      if (data is List) return List<String>.from(data);
+      return [];
+    }
+
     return Product(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: json['_id'] ?? '',
       merchantDetail: MerchantDetail.fromJson(json['merchantDetail'] ?? {}),
       productName: json['productName'] ?? '',
       category: ProductCategory.fromJson(json['category'] ?? {}),
@@ -120,14 +127,16 @@ class Product {
       quantity: json['quantity'] ?? 0,
       soldQuantity: json['soldQuantity'] ?? 0,
       description: json['description'] ?? '',
-      images: json['images'] != null ? List<String>.from(json['images']) : [],
-      variant:
-          json['variant'] != null ? List<String>.from(json['variant']) : [],
-      size: json['size'] != null ? List<String>.from(json['size']) : [],
+      images: parseStringList(json['images']),
+      variant: parseStringList(json['variant']),
+      size: parseStringList(json['size']),
       brand: json['brand'] ?? 'Hand Made',
       location: Location.fromJson(json['location'] ?? {}),
-      review: json['review'] != null
-          ? (json['review'] as List).map((r) => Review.fromJson(r)).toList()
+      review: (json['review'] is List)
+          ? (json['review'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map((r) => Review.fromJson(r))
+              .toList()
           : [],
       delivery: json['delivery'] ?? '',
       deliveryPrice: (json['deliveryPrice'] is num)
@@ -141,11 +150,13 @@ class Product {
           : null,
       isBanned: json['isBanned'] ?? false,
       isDeleted: json['isDeleted'] ?? false,
-      trashDate: json['trashDate'] != null
+      trashDate: (json['trashDate'] != null)
           ? DateTime.tryParse(json['trashDate'])
           : null,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      offer: json['offer'] != null ? Offer.fromJson(json['offer']) : null,
+      offer: (json['offer'] is Map<String, dynamic>)
+          ? Offer.fromJson(json['offer'])
+          : null,
     );
   }
 }

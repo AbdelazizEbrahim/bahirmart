@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -356,10 +357,8 @@ class LandingService {
     bool? isHome,
   }) async {
     try {
-      // If center is not provided, attempt to get user's location
       if (center == null) {
         final position = await _getUserLocation();
-        await fetchProducts();
         if (position != null) {
           center = '${position.latitude}-${position.longitude}';
         } else {
@@ -392,6 +391,8 @@ class LandingService {
       // Handle the response
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        debugPrint('ads from API...: $data');
+
         if (data['ads'] is List) {
           return List<ad_model.Ad>.from(
             data['ads'].map((item) => ad_model.Ad.fromJson(item)),
