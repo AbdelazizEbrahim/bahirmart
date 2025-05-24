@@ -117,6 +117,9 @@ class ProductService {
     int limit = 100,
   }) async {
     try {
+      final position = await _getUserLocation();
+      final lat = position?.latitude;
+      final lng = position?.longitude;
       print('Base URL: $_baseUrl');
       // If center is not provided, try to fetch the user's location
       String? finalCenter = center;
@@ -135,7 +138,8 @@ class ProductService {
       final queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
-        if (finalCenter != null) 'center': finalCenter,
+        if (lat != null) 'lat': lat.toString(),
+        if (lng != null) 'lng': lng.toString(),
         if (radius != null) 'radius': radius.toString(),
       };
 
@@ -166,7 +170,8 @@ class ProductService {
           final products = List<prod_model.Product>.from(
             data['products'].map((item) => prod_model.Product.fromJson(item)),
           );
-          print('Fetched ${products.length} products: ${products.map((p) => p.productName).toList()}');
+          print(
+              'Fetched ${products.length} products: ${products.map((p) => p.productName).toList()}');
           return products;
         }
         print('No products found in response');
