@@ -295,7 +295,7 @@ class LandingService {
     final lng = position?.longitude;
 
     try {
-      print('Starting fetchProductsByCategory...');
+      print('Starting fetchProducts...');
       print('Parameters lat=$lat, lng=$lng, limit=$limit');
 
       // Build query parameters
@@ -304,7 +304,7 @@ class LandingService {
         if (lat != null) 'lat': lat.toString(),
         if (lng != null) 'lng': lng.toString(),
       };
-      print('Query parameters built: $queryParams');
+      print('Query parameters built1: $queryParams');
 
       // Construct the URL with query parameters
       final uri = Uri.parse('$_baseUrl/fetchProducts')
@@ -318,7 +318,7 @@ class LandingService {
           'Content-Type': 'application/json',
         },
       );
-      print('HTTP GET request sent. Status code: ${response.statusCode}');
+      print('HTTP GET request sent. Status code prod: ${response.statusCode}');
 
       // Handle the response
       if (response.statusCode == 200) {
@@ -391,7 +391,6 @@ class LandingService {
       // Handle the response
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('ads from API...: $data');
 
         if (data['ads'] is List) {
           return List<ad_model.Ad>.from(

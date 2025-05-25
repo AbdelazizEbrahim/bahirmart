@@ -6,12 +6,35 @@ import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/product_model.dart';
 import 'package:bahirmart/core/services/cart_service.dart';
-import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:bahirmart/pages/product_detail_page.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<bool> verifyPayment(String txRef) async {
+  final url = Uri.parse('https://api.chapa.co/v1/transaction/verify/$txRef');
+  final response = await http.get(
+    url,
+    headers: {
+      'Authorization': 'Bearer YOUR_CHAPA_SECRET_KEY',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data['status'] == 'success') {
+      return true;
+    }
+  }
+  return false;
+}
 
 class CartPage extends StatelessWidget {
   const CartPage({Key? key}) : super(key: key);
+
+  static const String _baseUrl =
+      'http://localhost:3000'; // Replace with your actual base URL
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +44,7 @@ class CartPage extends StatelessWidget {
         actions: [
           Consumer<CartService>(
             builder: (context, cartService, child) {
-              if (cartService.itemCount > 0) {
+              if (cartService.productCount > 0) {
                 return IconButton(
                   icon: const Icon(Icons.delete_sweep),
                   onPressed: () => _showClearCartConfirmation(context),
@@ -35,7 +58,7 @@ class CartPage extends StatelessWidget {
       ),
       body: Consumer<CartService>(
         builder: (context, cartService, child) {
-          if (cartService.itemCount == 0) {
+          if (cartService.productCount == 0) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -52,7 +75,7 @@ class CartPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add items to your cart to proceed with checkout',
+                    'Add products to your cart to proceed with checkout',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -69,8 +92,7 @@ class CartPage extends StatelessWidget {
             );
           }
 
-          // Get items grouped by merchant
-          final merchantGroups = cartService.getItemsByMerchant();
+          final merchantGroups = cartService.getProductsByMerchant();
 
           return Column(
             children: [
@@ -83,7 +105,6 @@ class CartPage extends StatelessWidget {
                     final merchantItems = merchantGroups[merchantId]!;
                     final merchant = merchantItems.first.product.merchantDetail;
 
-                    // Get merchant-specific totals
                     final subtotal =
                         cartService.getMerchantSubtotal(merchantId);
                     final deliveryCost =
@@ -96,7 +117,6 @@ class CartPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Merchant header
                           Container(
                             padding:
                                 const EdgeInsets.all(AppSizes.paddingMedium),
@@ -148,8 +168,6 @@ class CartPage extends StatelessWidget {
                               ],
                             ),
                           ),
-
-                          // Products list
                           ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -159,8 +177,6 @@ class CartPage extends StatelessWidget {
                               return CartItemTile(item: item);
                             },
                           ),
-
-                          // Merchant summary
                           Container(
                             padding:
                                 const EdgeInsets.all(AppSizes.paddingMedium),
@@ -240,27 +256,66 @@ class CartPage extends StatelessWidget {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
+                                    // In CartPage's checkout button onPressed
                                     onPressed: () async {
-                                      // Get payment gateway URL
-                                      final paymentUrl =
-                                          await _getPaymentGatewayUrl(
-                                              merchantId, total);
+                                      final cartService =
+                                          Provider.of<CartService>(context,
+                                              listen: false);
+                                      final paymentData =
+                                          await cartService.initializePayment(
+                                        context,
+                                        merchantId,
+                                        merchantItems,
+                                        total,
+                                      );
 
-                                      // Launch the payment URL
-                                      if (paymentUrl != null) {
-                                        final Uri uri = Uri.parse(paymentUrl);
-                                        if (await canLaunchUrl(uri)) {
-                                          await launchUrl(uri,
-                                              mode: LaunchMode
-                                                  .externalApplication);
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                                content: Text(
-                                                    'Could not launch payment gateway')),
-                                          );
-                                        }
+                                      if (paymentData != null) {
+                                        final productIds = merchantItems
+                                            .map((item) => item.product.id)
+                                            .toList();
+
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => WebViewPage(
+                                              url: paymentData['checkout_url'],
+                                              txRef: paymentData['tx_ref'],
+                                              productIds: productIds,
+                                              merchantId: merchantId,
+                                            ),
+                                          ),
+                                        ).then((result) async {
+                                          if (result != null &&
+                                              result['success'] == true) {
+                                            final isVerified =
+                                                await cartService.verifyPayment(
+                                                    result['tx_ref']);
+                                            if (isVerified) {
+                                              cartService
+                                                  .removeProducts(productIds);
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'Payment verified successfully!')),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'Payment verification failed.')),
+                                              );
+                                            }
+                                          } else {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Payment not completed.')),
+                                            );
+                                          }
+                                        });
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -290,23 +345,6 @@ class CartPage extends StatelessWidget {
     );
   }
 
-  Future<String?> _getPaymentGatewayUrl(
-      String merchantId, double amount) async {
-    // This is a placeholder for the actual API call to get the payment gateway URL
-    // In a real implementation, you would call your backend API to get the payment URL
-    try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // For demonstration purposes, return a dummy URL
-      // In a real app, this would come from your backend
-      return 'https://payment-gateway.example.com/checkout?merchantId=$merchantId&amount=$amount';
-    } catch (e) {
-      debugPrint('Error getting payment URL: $e');
-      return null;
-    }
-  }
-
   void _showClearCartConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -324,9 +362,7 @@ class CartPage extends StatelessWidget {
               Provider.of<CartService>(context, listen: false).clearCart();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Cart cleared'),
-                ),
+                const SnackBar(content: Text('Cart cleared')),
               );
             },
             child: const Text('Clear', style: TextStyle(color: Colors.red)),
@@ -337,8 +373,60 @@ class CartPage extends StatelessWidget {
   }
 }
 
+class WebViewPage extends StatefulWidget {
+  final String url;
+  final String txRef;
+  final List<String> productIds;
+  final String merchantId;
+
+  const WebViewPage({
+    Key? key,
+    required this.url,
+    required this.txRef,
+    required this.productIds,
+    required this.merchantId,
+  }) : super(key: key);
+
+  @override
+  State<WebViewPage> createState() => _WebViewPageState();
+}
+
+class _WebViewPageState extends State<WebViewPage> {
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.contains('/verifyPayment')) {
+              Navigator.of(context).pop({
+                'success': true,
+                'tx_ref': widget.txRef,
+              });
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Payment')),
+      body: WebViewWidget(controller: _controller),
+    );
+  }
+}
+
 class CartItemTile extends StatelessWidget {
-  final CartItem item;
+  final CartProduct item;
 
   const CartItemTile({Key? key, required this.item}) : super(key: key);
 
@@ -364,7 +452,6 @@ class CartItemTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product image
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -395,8 +482,6 @@ class CartItemTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-
-            // Product details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,8 +495,6 @@ class CartItemTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-
-                  // Price
                   Row(
                     children: [
                       if (item.product.hasActiveOffer)
@@ -434,16 +517,12 @@ class CartItemTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-
-                  // Delivery info
                   Text(
                     'Delivery: ${_getDeliveryInfo(item.product)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
                         ),
                   ),
-
-                  // Quantity controls and delete button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -479,8 +558,8 @@ class CartItemTile extends StatelessWidget {
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Maximum quantity reached'),
-                                  ),
+                                      content:
+                                          Text('Maximum quantity reached')),
                                 );
                               }
                             },
@@ -538,13 +617,12 @@ class CartItemTile extends StatelessWidget {
           TextButton(
             onPressed: () {
               Provider.of<CartService>(context, listen: false)
-                  .removeItem(item.product.id);
+                  .removeProduct(item.product.id);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content:
-                      Text('${item.product.productName} removed from cart'),
-                ),
+                    content:
+                        Text('${item.product.productName} removed from cart')),
               );
             },
             child: const Text('Remove', style: TextStyle(color: Colors.red)),

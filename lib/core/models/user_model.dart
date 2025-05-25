@@ -58,6 +58,8 @@ class User {
     );
   }
 
+  get address => null;
+
   Map<String, dynamic> toJson() {
     return {
       '_id': id,

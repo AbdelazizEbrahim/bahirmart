@@ -694,7 +694,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                   Expanded(
                     child: Consumer<CartService>(
                       builder: (context, cartService, child) {
-                        final isInCart = cartService.items.any(
+                        final isInCart = cartService.products.any(
                             (item) => item.product.id == widget.product.id);
 
                         return ElevatedButton(
@@ -702,7 +702,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                             if (isInCart) {
                               Navigator.pushNamed(context, '/cart');
                             } else {
-                              cartService.addItem(widget.product);
+                              cartService.addProduct(widget.product);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -736,7 +736,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                         // Add to cart and proceed to checkout
                         final cartService =
                             Provider.of<CartService>(context, listen: false);
-                        cartService.addItem(widget.product);
+                        cartService.addProduct(widget.product);
 
                         // Navigate to checkout
                         Navigator.pushNamed(context, '/checkout');

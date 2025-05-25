@@ -148,7 +148,7 @@ class ProductCard extends StatelessWidget {
                       ),
                       Consumer<CartService>(
                         builder: (context, cartService, child) {
-                          final isInCart = cartService.items.any((item) => item.product.id == product.id);
+                          final isInCart = cartService.products.any((item) => item.product.id == product.id);
                           
                           return isInCart
                               ? TextButton.icon(
@@ -166,7 +166,7 @@ class ProductCard extends StatelessWidget {
                               : IconButton(
                         icon: const Icon(Icons.add_shopping_cart),
                         onPressed: () {
-                          cartService.addItem(product);
+                          cartService.addProduct(product);
                           
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
