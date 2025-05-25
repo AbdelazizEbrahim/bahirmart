@@ -964,23 +964,21 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                     bool success =
                         await OrderService.markOrderAsReceived(_order.id);
                     if (success) {
-                      if (!mounted)
-                        return; // Check mounted before updating or navigating
+                      if (!mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                            content:
-                                Text('Order marked as received successfully')),
+                          content:
+                              Text('Order marked as received successfully'),
+                          duration: Duration(seconds: 1),
+                        ),
                       );
 
-                      // Option 1: Just navigate without setState (widget will be disposed)
-                      // Navigator.pushReplacementNamed(context, '/orders');
-
-                      // Option 2: If you want to update UI before navigating (not necessary if navigating immediately)
-                      setState(() {
-                        _order.status = 'Received';
+                      // Navigate back to orders page after a short delay
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        if (!mounted) return;
+                        Navigator.pushReplacementNamed(context, '/orders');
                       });
-                      Navigator.pushReplacementNamed(context, '/orders');
                     }
                   } catch (e) {
                     if (!mounted) return;
