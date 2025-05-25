@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/category_model.dart' as cat;
 

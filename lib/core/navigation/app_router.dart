@@ -1,6 +1,7 @@
 import 'package:bahirmart/pages/orders_page.dart';
 import 'package:bahirmart/pages/profile_page.dart';
 import 'package:bahirmart/pages/verify_otp_page.dart';
+import 'package:bahirmart/pages/wishlist_page.dart';
 import 'package:flutter/material.dart';
 import 'package:bahirmart/pages/landing_page.dart';
 import 'package:bahirmart/pages/products_page.dart';
@@ -47,10 +48,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const AuctionListPage());
       case '/cart':
         return MaterialPageRoute(builder: (_) => const CartPage());
-      case '/more':
-        return MaterialPageRoute(
-            builder: (_) =>
-                const Scaffold(body: Center(child: Text('More Page'))));
+      case '/wishlist':
+        return MaterialPageRoute(builder: (_) => const WishlistPage(userId: '',));
       case '/product_detail':
         final product = settings.arguments as prod_model.Product?;
         if (product == null) {

@@ -119,7 +119,7 @@ class MockData {
             'Color: ${['Blue', 'Black', 'Brown', 'Green', 'Red'][catIndex]}'
           ],
           size: [
-            '${['Standard', 'L', 'Medium', 'One Size', 'Paperback'][catIndex]}'
+            (['Standard', 'L', 'Medium', 'One Size', 'Paperback'][catIndex])
           ],
           brand: [
             'TechBrand',

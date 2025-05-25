@@ -2,33 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bahirmart/components/app_bar.dart';
 import 'package:bahirmart/components/bottom_navigation_bar.dart';
-import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/product_model.dart';
 import 'package:bahirmart/core/services/cart_service.dart';
 import 'package:bahirmart/pages/product_detail_page.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-Future<bool> verifyPayment(String txRef) async {
-  final url = Uri.parse('https://api.chapa.co/v1/transaction/verify/$txRef');
-  final response = await http.get(
-    url,
-    headers: {
-      'Authorization': 'Bearer YOUR_CHAPA_SECRET_KEY',
-      'Content-Type': 'application/json',
-    },
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    if (data['status'] == 'success') {
-      return true;
-    }
-  }
-  return false;
-}
 
 class CartPage extends StatelessWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -341,7 +319,7 @@ class CartPage extends StatelessWidget {
           );
         },
       ),
-      bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 2),
+      bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 3),
     );
   }
 

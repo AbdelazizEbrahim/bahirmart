@@ -1,11 +1,9 @@
+import 'package:bahirmart/core/models/order_model.dart';
+import 'package:bahirmart/core/services/order_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:bahirmart/components/app_bar.dart';
-import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
-import 'package:bahirmart/core/models/order_model.dart';
 
 class OrderDetailPage extends StatefulWidget {
   final Order order;
@@ -16,7 +14,8 @@ class OrderDetailPage extends StatefulWidget {
   State<OrderDetailPage> createState() => _OrderDetailPageState();
 }
 
-class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProviderStateMixin {
+class _OrderDetailPageState extends State<OrderDetailPage>
+    with SingleTickerProviderStateMixin {
   late Order _order;
   bool _isEditingCustomerInfo = false;
   final _formKey = GlobalKey<FormState>();
@@ -27,16 +26,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   String? _selectedRefundReason;
-  final TextEditingController _customRefundReasonController = TextEditingController();
+  final TextEditingController _customRefundReasonController =
+      TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
-    _nameController = TextEditingController(text: _order.customerDetail.customerName);
-    _phoneController = TextEditingController(text: _order.customerDetail.phoneNumber);
-    _stateController = TextEditingController(text: _order.customerDetail.address.state);
-    _cityController = TextEditingController(text: _order.customerDetail.address.city);
+    _nameController =
+        TextEditingController(text: _order.customerDetail.customerName);
+    _phoneController =
+        TextEditingController(text: _order.customerDetail.phoneNumber);
+    _stateController =
+        TextEditingController(text: _order.customerDetail.address.state);
+    _cityController =
+        TextEditingController(text: _order.customerDetail.address.city);
 
     // Initialize animation controller for UI transitions
     _animationController = AnimationController(
@@ -76,49 +80,70 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
     });
   }
 
-  void _saveCustomerInfo() {
+  void _saveCustomerInfo() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _order = Order(
-          id: _order.id,
-          customerDetail: CustomerDetail(
-            customerId: _order.customerDetail.customerId,
-            customerName: _nameController.text,
-            phoneNumber: _phoneController.text,
-            customerEmail: _order.customerDetail.customerEmail,
-            address: Address(
-              state: _stateController.text,
-              city: _cityController.text,
-            ),
-          ),
-          merchantDetail: _order.merchantDetail,
-          products: _order.products,
-          auction: _order.auction,
-          totalPrice: _order.totalPrice,
-          status: _order.status,
-          paymentStatus: _order.paymentStatus,
-          location: _order.location,
-          transactionRef: _order.transactionRef,
-          orderDate: _order.orderDate,
-          refundReason: _order.refundReason,
-        );
-        _isEditingCustomerInfo = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Customer information updated successfully')),
+      final updatedCustomerDetail = CustomerDetail(
+        customerId: _order.customerDetail.customerId,
+        customerName: _nameController.text,
+        phoneNumber: _phoneController.text,
+        customerEmail: _order.customerDetail.customerEmail,
+        address: Address(
+          state: _stateController.text,
+          city: _cityController.text,
+        ),
       );
+
+      try {
+        final success = await OrderService.updateCustomerInfo(
+          _order.id,
+          updatedCustomerDetail,
+        );
+
+        if (success) {
+          setState(() {
+            _order = Order(
+              id: _order.id,
+              customerDetail: updatedCustomerDetail,
+              merchantDetail: _order.merchantDetail,
+              products: _order.products,
+              auction: _order.auction,
+              totalPrice: _order.totalPrice,
+              status: _order.status,
+              paymentStatus: _order.paymentStatus,
+              location: _order.location,
+              transactionRef: _order.transactionRef,
+              orderDate: _order.orderDate,
+              refundReason: _order.refundReason,
+            );
+            _isEditingCustomerInfo = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Customer information updated successfully')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update customer info')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 
   bool _canRequestRefund() {
-    return _order.status != 'Received' &&
-        _order.paymentStatus != 'Refunded' &&
-        _order.paymentStatus != 'Pending Refund';
+    return _order.paymentStatus == 'Paid' &&
+        (_order.status == 'Pending' || _order.status == 'Dispatched');
   }
 
   void _requestRefund() {
     _selectedRefundReason = null;
     _customRefundReasonController.clear();
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -144,16 +169,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   filled: true,
                   fillColor: Colors.grey[100],
                 ),
                 hint: const Text('Choose a reason'),
                 value: _selectedRefundReason,
                 items: const [
-                  DropdownMenuItem(value: 'Item not as described', child: Text('Item not as described')),
-                  DropdownMenuItem(value: 'Changed mind', child: Text('Changed mind')),
-                  DropdownMenuItem(value: 'Delivery issue', child: Text('Delivery issue')),
+                  DropdownMenuItem(
+                      value: 'Item not as described',
+                      child: Text('Item not as described')),
+                  DropdownMenuItem(
+                      value: 'Changed mind', child: Text('Changed mind')),
+                  DropdownMenuItem(
+                      value: 'Delivery issue', child: Text('Delivery issue')),
                   DropdownMenuItem(value: 'Other', child: Text('Other')),
                 ],
                 onChanged: (value) {
@@ -169,7 +199,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                   maxLines: 3,
                   decoration: InputDecoration(
                     hintText: 'Please specify your reason...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: Colors.grey[100],
                   ),
@@ -181,36 +212,62 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                    child: const Text('Cancel',
+                        style: TextStyle(color: Colors.grey)),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       if (_selectedRefundReason == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please select a refund reason')),
+                          const SnackBar(
+                              content: Text('Please select a refund reason')),
                         );
                         return;
                       }
+
                       final reason = _selectedRefundReason == 'Other'
                           ? _customRefundReasonController.text
                           : _selectedRefundReason!;
+
                       if (_selectedRefundReason == 'Other' && reason.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please specify a reason')),
+                          const SnackBar(
+                              content: Text('Please specify a reason')),
                         );
                         return;
                       }
-                      // In a real app, submit refund request to backend
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Refund request submitted: $reason')),
-                      );
+
+                      try {
+                        final success = await OrderService.requestRefund(
+                          _order.id,
+                          reason,
+                        );
+
+                        Navigator.pop(context);
+
+                        if (success) {
+                          Navigator.pushReplacementNamed(
+                              context, '/orders'); // 👈 Go to orders page
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Failed to submit refund request. Please try again.')),
+                          );
+                        }
+                      } catch (e) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
                     },
                     child: const Text('Submit'),
                   ),
@@ -316,8 +373,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
             ],
@@ -387,9 +446,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isCompleted ? Theme.of(context).primaryColor : Colors.grey[200],
+                  color: isCompleted
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey[200],
                   border: isCurrent
-                      ? Border.all(color: Theme.of(context).primaryColor, width: 3)
+                      ? Border.all(
+                          color: Theme.of(context).primaryColor, width: 3)
                       : null,
                   boxShadow: [
                     BoxShadow(
@@ -409,8 +471,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
               Text(
                 statuses[index],
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isCurrent ? Theme.of(context).primaryColor : Colors.grey[600],
-                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                      color: isCurrent
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey[600],
+                      fontWeight:
+                          isCurrent ? FontWeight.bold : FontWeight.normal,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -423,7 +488,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
 
   Widget _buildOrderInfoCard() {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium, vertical: 8),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -450,7 +516,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
               'Order Date',
               DateFormat('MMM dd, yyyy HH:mm').format(_order.orderDate),
             ),
-            _buildInfoRow('Total Amount', '\$${_order.totalPrice.toStringAsFixed(2)}'),
+            _buildInfoRow(
+                'Total Amount', '\$${_order.totalPrice.toStringAsFixed(2)}'),
           ],
         ),
       ),
@@ -459,7 +526,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
 
   Widget _buildCustomerInfoCard() {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium, vertical: 8),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -483,7 +551,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                     ),
                   ],
                 ),
-                if (_order.status != 'Dispatched' && _order.status != 'Received')
+                if (_order.status != 'Dispatched' &&
+                    _order.status != 'Received')
                   TextButton.icon(
                     onPressed: _toggleCustomerInfoEditing,
                     icon: Icon(
@@ -506,8 +575,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                     children: [
                       _buildInfoRow('Name', _order.customerDetail.customerName),
                       _buildInfoRow('Phone', _order.customerDetail.phoneNumber),
-                      _buildInfoRow('Email', _order.customerDetail.customerEmail),
-                      _buildInfoRow('State', _order.customerDetail.address.state),
+                      _buildInfoRow(
+                          'Email', _order.customerDetail.customerEmail),
+                      _buildInfoRow(
+                          'State', _order.customerDetail.address.state),
                       _buildInfoRow('City', _order.customerDetail.address.city),
                     ],
                   ),
@@ -521,15 +592,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
     return Form(
       key: _formKey,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextFormField(
             controller: _nameController,
-            decoration: InputDecoration(
-              labelText: 'Name',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
+            decoration: const InputDecoration(labelText: 'Customer Name'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a name';
@@ -537,35 +604,19 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
               return null;
             },
           ),
-          const SizedBox(height: 12),
           TextFormField(
             controller: _phoneController,
-            decoration: InputDecoration(
-              labelText: 'Phone Number',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
-            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(labelText: 'Phone Number'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a phone number';
               }
-              if (!RegExp(r'^\+?[1-9]\d{1,14}$').hasMatch(value)) {
-                return 'Please enter a valid phone number';
-              }
               return null;
             },
           ),
-          const SizedBox(height: 12),
           TextFormField(
             controller: _stateController,
-            decoration: InputDecoration(
-              labelText: 'State',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
+            decoration: const InputDecoration(labelText: 'State'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a state';
@@ -573,15 +624,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
               return null;
             },
           ),
-          const SizedBox(height: 12),
           TextFormField(
             controller: _cityController,
-            decoration: InputDecoration(
-              labelText: 'City',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
+            decoration: const InputDecoration(labelText: 'City'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a city';
@@ -595,16 +640,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
             children: [
               TextButton(
                 onPressed: _cancelCustomerInfoEdit,
-                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                child: const Text('Cancel'),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: _saveCustomerInfo,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
                 child: const Text('Save'),
               ),
             ],
@@ -616,7 +656,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
 
   Widget _buildMerchantInfoCard() {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium, vertical: 8),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -651,9 +692,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
             ),
             const SizedBox(height: 8),
             _buildInfoRow('Account Name', _order.merchantDetail.accountName),
-            _buildInfoRow('Account Number', _order.merchantDetail.accountNumber),
+            _buildInfoRow(
+                'Account Number', _order.merchantDetail.accountNumber),
             if (_order.merchantDetail.merchantReference != null)
-              _buildInfoRow('Reference', _order.merchantDetail.merchantReference!),
+              _buildInfoRow(
+                  'Reference', _order.merchantDetail.merchantReference!),
             _buildInfoRow('Bank Code', _order.merchantDetail.bankCode),
           ],
         ),
@@ -663,7 +706,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
 
   Widget _buildProductsCard() {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium, vertical: 8),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -702,7 +746,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                           children: [
                             Text(
                               product.productName,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.grey[800],
                                   ),
@@ -725,10 +772,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                       ),
                       Text(
                         '\$${(product.price * product.quantity + product.deliveryPrice).toStringAsFixed(2)}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
                       ),
                     ],
                   ),
@@ -745,7 +793,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
     if (_order.auction == null) return const SizedBox.shrink();
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium, vertical: 8),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -768,7 +817,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
             ),
             const SizedBox(height: 16),
             _buildInfoRow('Auction ID', _order.auction!.auctionId),
-            _buildInfoRow('Delivery Type', _order.auction!. delivery),
+            _buildInfoRow('Delivery Type', _order.auction!.delivery),
             _buildInfoRow(
               'Delivery Price',
               '\$${_order.auction!.deliveryPrice.toStringAsFixed(2)}',
@@ -781,7 +830,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
 
   Widget _buildPaymentInfoCard() {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium, vertical: 8),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -815,7 +865,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
 
   Widget _buildDeliveryTrackingCard() {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMedium, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.paddingMedium, vertical: 8),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -825,7 +876,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
           children: [
             Row(
               children: [
-                Icon(Icons.local_shipping, color: Theme.of(context).primaryColor),
+                Icon(Icons.local_shipping,
+                    color: Theme.of(context).primaryColor),
                 const SizedBox(width: 8),
                 Text(
                   'Delivery Tracking',
@@ -884,20 +936,69 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
                 ],
               ),
             const SizedBox(height: 16),
+
+            // Replace "Track on Map" with "Mark as Received" if payment is PAID and status is DISPATCHED
             if (_order.status == 'Dispatched')
               ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Opening tracking map...')),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Are you sure?'),
+                      content: const Text(
+                          'Are you sure you want to mark this order as received? This action cannot be undone.'),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel')),
+                        TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Confirm')),
+                      ],
+                    ),
                   );
+
+                  if (confirm != true) return;
+
+                  try {
+                    bool success =
+                        await OrderService.markOrderAsReceived(_order.id);
+                    if (success) {
+                      if (!mounted)
+                        return; // Check mounted before updating or navigating
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content:
+                                Text('Order marked as received successfully')),
+                      );
+
+                      // Option 1: Just navigate without setState (widget will be disposed)
+                      // Navigator.pushReplacementNamed(context, '/orders');
+
+                      // Option 2: If you want to update UI before navigating (not necessary if navigating immediately)
+                      setState(() {
+                        _order.status = 'Received';
+                      });
+                      Navigator.pushReplacementNamed(context, '/orders');
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
                 },
-                icon: const Icon(Icons.location_on),
-                label: const Text('Track on Map'),
+                icon: const Icon(Icons.check_circle),
+                label: const Text('Mark as Received'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
           ],
@@ -906,7 +1007,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
     );
   }
 
-  Widget _buildTrackingInfo(String title, String description, bool isCompleted) {
+  Widget _buildTrackingInfo(
+      String title, String description, bool isCompleted) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -917,7 +1019,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> with SingleTickerProv
             height: 30,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isCompleted ? Theme.of(context).primaryColor : Colors.grey[200],
+              color: isCompleted
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey[200],
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),

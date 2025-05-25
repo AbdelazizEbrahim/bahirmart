@@ -25,10 +25,10 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage> {
-  int _selectedToggleIndex = 0;
+  final int _selectedToggleIndex = 0;
   String? _selectedCategoryId;
   List<ad_model.Ad> _ads = [];
-  List<prod_model.Product> _products = [];
+  final List<prod_model.Product> _products = [];
   List<cat.Category> _categories = [];
   Map<String, List<prod_model.Product>> _categoryProducts = {}; // New map for category products
   User? _user;
@@ -440,8 +440,8 @@ class _LandingPageState extends State<LandingPage> {
       floatingActionButton: _showBackToTop
           ? FloatingActionButton(
               onPressed: _scrollToTop,
-              child: const Icon(Icons.arrow_upward),
               mini: true,
+              child: const Icon(Icons.arrow_upward),
             )
           : null,
       bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 0),

@@ -35,17 +35,17 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = Provider.of<UserProvider>(context).user;
 
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         appBar: BahirMartAppBar(title: 'Profile'),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
         bottomNavigationBar:
-            const BahirMartBottomNavigationBar(currentIndex: 4),
+            BahirMartBottomNavigationBar(currentIndex: 4),
       );
     }
 
     if (user == null) {
       return Scaffold(
-        appBar: BahirMartAppBar(title: 'Profile'),
+        appBar: const BahirMartAppBar(title: 'Profile'),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -83,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
-      appBar: BahirMartAppBar(title: 'Profile'),
+      appBar: const BahirMartAppBar(title: 'Profile'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.paddingMedium),
         child: Column(

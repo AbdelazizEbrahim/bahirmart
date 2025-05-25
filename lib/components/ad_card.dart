@@ -180,8 +180,8 @@ class _AdCardState extends State<AdCard> with SingleTickerProviderStateMixin {
                                 child: ElevatedButton(
                                   onPressed: _navigateToProductDetail,
                                   style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
-                                        backgroundColor: MaterialStateProperty.all(Colors.green),
-                                        shape: MaterialStateProperty.all(
+                                        backgroundColor: WidgetStateProperty.all(Colors.green),
+                                        shape: WidgetStateProperty.all(
                                           RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(8),
                                           ),

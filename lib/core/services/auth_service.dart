@@ -6,7 +6,6 @@ import 'package:bahirmart/core/models/user_model.dart';
 import 'package:bahirmart/main.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For debugPrint
 
 class AuthService {

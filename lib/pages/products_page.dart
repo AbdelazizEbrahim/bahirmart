@@ -130,30 +130,26 @@ class _ProductsPageState extends State<ProductsPage> {
       _filteredProducts = _products.where((product) {
         // Category filter
         if (_selectedCategoryId != null &&
-            product.category?.categoryId != _selectedCategoryId) {
+            product.category.categoryId != _selectedCategoryId) {
           return false;
         }
 
         // Search phrase filter
         if (_searchController.text.isNotEmpty) {
           final searchLower = _searchController.text.toLowerCase();
-          bool matchesName = product.productName?.toLowerCase().contains(searchLower) ?? false;
-          bool matchesDescription = product.description?.toLowerCase().contains(searchLower) ?? false;
+          bool matchesName = product.productName.toLowerCase().contains(searchLower) ?? false;
+          bool matchesDescription = product.description.toLowerCase().contains(searchLower) ?? false;
           if (!matchesName && !matchesDescription) {
             return false;
           }
         }
 
         // Price range filter
-        if (product.price != null) {
-          if (product.price! < _priceRange.start ||
-              product.price! > _priceRange.end) {
-            return false;
-          }
-        } else {
-          return false; // Exclude products with null price
+        if (product.price! < _priceRange.start ||
+            product.price! > _priceRange.end) {
+          return false;
         }
-
+      
         // Rating filter
         if (product.review?.isNotEmpty ?? false) {
           final avgRating =
@@ -167,15 +163,11 @@ class _ProductsPageState extends State<ProductsPage> {
         }
 
         // Quantity filter
-        if (product.quantity != null) {
-          if (product.quantity! < _quantityRange.start ||
-              product.quantity! > _quantityRange.end) {
-            return false;
-          }
-        } else {
-          return false; // Exclude products with null quantity
+        if (product.quantity! < _quantityRange.start ||
+            product.quantity! > _quantityRange.end) {
+          return false;
         }
-
+      
         // Delivery type filter
         if (_selectedDeliveryType != null &&
             product.delivery != _selectedDeliveryType) {
@@ -297,8 +289,8 @@ class _ProductsPageState extends State<ProductsPage> {
               max: 5,
               divisions: 10,
               labels: RangeLabels(
-                '${_ratingRange.start.toStringAsFixed(1)}',
-                '${_ratingRange.end.toStringAsFixed(1)}',
+                _ratingRange.start.toStringAsFixed(1),
+                _ratingRange.end.toStringAsFixed(1),
               ),
               onChanged: (RangeValues values) {
                 setState(() {
@@ -510,8 +502,8 @@ class _ProductsPageState extends State<ProductsPage> {
       floatingActionButton: _showBackToTop
           ? FloatingActionButton(
               onPressed: _scrollToTop,
-              child: const Icon(Icons.arrow_upward),
               mini: true,
+              child: const Icon(Icons.arrow_upward),
             )
           : null,
       bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 1),

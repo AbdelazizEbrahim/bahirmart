@@ -8,7 +8,7 @@ class BahirMartBottomNavigationBar extends StatelessWidget {
       : super(key: key);
 
   void _onTabTapped(BuildContext context, int index) {
-    final routes = ['/', '/products', '/auctions', '/cart', '/more'];
+    final routes = ['/', '/products', '/auctions', '/cart', '/wishlist'];
     Navigator.pushReplacementNamed(context, routes[index]);
   }
 
@@ -24,7 +24,10 @@ class BahirMartBottomNavigationBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Products'),
         BottomNavigationBarItem(icon: Icon(Icons.gavel), label: 'Auctions'),
         BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
-        BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite_border),
+          label: 'WishList',
+        )
       ],
     );
   }

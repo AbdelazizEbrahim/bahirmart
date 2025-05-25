@@ -25,7 +25,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
   String _selectedStatus = 'All';
   double _minPrice = 0;
   double _maxPrice = 1000000;
-  List<Auction> _auctions = [];
+  final List<Auction> _auctions = [];
   List<Auction> _filteredAuctions = [];
   int _currentPage = 1;
   bool _isLoading = false;
@@ -142,7 +142,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BahirMartAppBar(title: 'Auctions'),
+      appBar: const BahirMartAppBar(title: 'Auctions'),
       body: Column(
         children: [
           Container(
@@ -245,7 +245,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
                         child: TextField(
                           controller: _minPriceController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Min Price',
                             prefixText: '\$',
                             border: OutlineInputBorder(),
@@ -257,7 +257,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
                         child: TextField(
                           controller: _maxPriceController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Max Price',
                             prefixText: '\$',
                             border: OutlineInputBorder(),
@@ -316,7 +316,7 @@ class _AuctionListPageState extends State<AuctionListPage> {
           ),
         ],
       ),
-      bottomNavigationBar: BahirMartBottomNavigationBar(currentIndex: 2),
+      bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 2),
     );
   }
 

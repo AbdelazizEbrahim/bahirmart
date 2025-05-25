@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
 import 'package:bahirmart/core/models/product_model.dart';
 import 'package:bahirmart/core/services/cart_service.dart';

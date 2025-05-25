@@ -325,7 +325,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                                 Expanded(
                                   child: _buildInfoChip(
                                     Icons.category,
-                                    widget.product.category?.categoryName ??
+                                    widget.product.category.categoryName ??
                                         'No Category',
                                   ),
                                 ),
@@ -859,9 +859,9 @@ class _ProductDetailPageState extends State<ProductDetailPage>
             children: [
               const Icon(Icons.scale, size: 16),
               const SizedBox(width: 8),
-              Text(
+              const Text(
                 'Weight: ',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Text('${widget.product.kilogramPerPrice ?? 1} kg'),
             ],

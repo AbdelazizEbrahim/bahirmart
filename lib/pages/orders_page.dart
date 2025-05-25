@@ -1,11 +1,10 @@
+import 'package:bahirmart/core/models/order_model.dart';
+import 'package:bahirmart/core/services/order_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'package:bahirmart/components/app_bar.dart';
 import 'package:bahirmart/components/bottom_navigation_bar.dart';
-import 'package:bahirmart/core/constants/app_colors.dart';
 import 'package:bahirmart/core/constants/app_sizes.dart';
-import 'package:bahirmart/core/models/order_model.dart';
 import 'package:bahirmart/pages/order_detail_page.dart';
 
 class OrdersPage extends StatefulWidget {
@@ -21,6 +20,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   bool _isFilterPanelOpen = false;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  bool _isLoading = true;
 
   // Filter parameters
   String? _selectedStatus;
@@ -32,10 +32,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _allOrders = _getSampleOrders();
-    _filteredOrders = List.from(_allOrders);
+    _allOrders = [];
+    _filteredOrders = [];
+    _fetchOrders();
 
-    // Initialize animation controller for filter panel
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -45,141 +45,36 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     );
   }
 
+  Future<void> _fetchOrders() async {
+    setState(() => _isLoading = true);
+    try {
+      final orders = await OrderService.getAllOrders();
+      setState(() {
+        _allOrders = orders;
+        _filteredOrders = List.from(_allOrders);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching orders: $e')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
 
-  // Sample orders
-  List<Order> _getSampleOrders() {
-    final customerDetail = CustomerDetail(
-      customerId: 'user1',
-      customerName: 'John Doe',
-      phoneNumber: '+1234567890',
-      customerEmail: 'john@example.com',
-      address: Address(state: 'California', city: 'Los Angeles'),
-    );
-
-    final location = Location(type: 'Point', coordinates: [34.0522, -118.2437]);
-
-    return [
-      Order(
-        id: '1',
-        customerDetail: customerDetail,
-        merchantDetail: MerchantDetail(
-          merchantId: 'merchant1',
-          merchantName: 'Electronics Store',
-          merchantEmail: 'electronics@example.com',
-          phoneNumber: '+1987654321',
-          accountName: 'Electronics Store LLC',
-          accountNumber: '1234567890',
-          bankCode: 'CHASE',
-        ),
-        products: [
-          OrderProduct(
-            productId: 'prod1',
-            productName: 'Smartphone X',
-            quantity: 1,
-            price: 699.99,
-            delivery: 'FLAT',
-            deliveryPrice: 10.00,
-          ),
-          OrderProduct(
-            productId: 'prod2',
-            productName: 'Phone Case',
-            quantity: 2,
-            price: 19.99,
-            delivery: 'FLAT',
-            deliveryPrice: 0.00,
-          ),
-        ],
-        totalPrice: 749.97,
-        status: 'Pending',
-        paymentStatus: 'Paid',
-        location: location,
-        transactionRef: 'TRX123456789',
-        orderDate: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Order(
-        id: '2',
-        customerDetail: customerDetail,
-        merchantDetail: MerchantDetail(
-          merchantId: 'merchant2',
-          merchantName: 'Fashion Boutique',
-          merchantEmail: 'fashion@example.com',
-          phoneNumber: '+1987654322',
-          accountName: 'Fashion Boutique LLC',
-          accountNumber: '0987654321',
-          bankCode: 'BOA',
-        ),
-        products: [
-          OrderProduct(
-            productId: 'prod3',
-            productName: 'Designer T-Shirt',
-            quantity: 3,
-            price: 29.99,
-            delivery: 'FLAT',
-            deliveryPrice: 5.00,
-          ),
-        ],
-        totalPrice: 94.97,
-        status: 'Dispatched',
-        paymentStatus: 'Paid To Merchant',
-        location: location,
-        transactionRef: 'TRX987654321',
-        orderDate: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-      Order(
-        id: '3',
-        customerDetail: customerDetail,
-        merchantDetail: MerchantDetail(
-          merchantId: 'merchant3',
-          merchantName: 'Grocery Store',
-          merchantEmail: 'grocery@example.com',
-          phoneNumber: '+1987654323',
-          accountName: 'Grocery Store LLC',
-          accountNumber: '1122334455',
-          bankCode: 'WELLS',
-        ),
-        products: [
-          OrderProduct(
-            productId: 'prod4',
-            productName: 'Organic Bananas',
-            quantity: 2,
-            price: 3.99,
-            delivery: 'PERKG',
-            deliveryPrice: 2.50,
-          ),
-          OrderProduct(
-            productId: 'prod5',
-            productName: 'Whole Grain Bread',
-            quantity: 1,
-            price: 4.99,
-            delivery: 'FLAT',
-            deliveryPrice: 2.00,
-          ),
-        ],
-        totalPrice: 17.47,
-        status: 'Received',
-        paymentStatus: 'Paid',
-        location: location,
-        transactionRef: 'TRX456789123',
-        orderDate: DateTime.now().subtract(const Duration(days: 10)),
-      ),
-    ];
-  }
-
-  // Apply filters to the orders list
   void _applyFilters() {
     setState(() {
       _filteredOrders = _allOrders.where((order) {
         final matchesStatus = _selectedStatus == null || order.status == _selectedStatus;
-        final matchesPaymentStatus =
-            _selectedPaymentStatus == null || order.paymentStatus == _selectedPaymentStatus;
+        final matchesPaymentStatus = _selectedPaymentStatus == null || order.paymentStatus == _selectedPaymentStatus;
         var matchesDate = true;
         if (_startDate != null && _endDate != null && _startDate!.isAfter(_endDate!)) {
-          // Swap dates if startDate is after endDate
           final temp = _startDate;
           _startDate = _endDate;
           _endDate = temp;
@@ -190,14 +85,12 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         if (_endDate != null) {
           matchesDate = matchesDate && order.orderDate.isBefore(_endDate!.add(const Duration(days: 1)));
         }
-        final matchesMerchant = _merchantQuery.isEmpty ||
-            order.merchantDetail.merchantName.toLowerCase().contains(_merchantQuery.toLowerCase());
+        final matchesMerchant = _merchantQuery.isEmpty || order.merchantDetail.merchantName.toLowerCase().contains(_merchantQuery.toLowerCase());
         return matchesStatus && matchesPaymentStatus && matchesDate && matchesMerchant;
       }).toList();
     });
   }
 
-  // Clear all filters
   void _clearFilters() {
     setState(() {
       _selectedStatus = null;
@@ -209,7 +102,6 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     });
   }
 
-  // Toggle filter panel
   void _toggleFilterPanel() {
     setState(() {
       _isFilterPanelOpen = !_isFilterPanelOpen;
@@ -234,6 +126,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             ),
             onPressed: _toggleFilterPanel,
           ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _fetchOrders,
+          ),
         ],
       ),
       body: Container(
@@ -252,18 +148,19 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                 child: _buildFilterPanel(context),
               ),
             Expanded(
-              child: _filteredOrders.isEmpty
-                  ? _buildEmptyOrdersView(context)
-                  : _buildOrdersList(context, _filteredOrders),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filteredOrders.isEmpty
+                      ? _buildEmptyOrdersView(context)
+                      : _buildOrdersList(context, _filteredOrders),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 3),
+      bottomNavigationBar: const BahirMartBottomNavigationBar(currentIndex: 4),
     );
   }
 
-  // Build the filter panel
   Widget _buildFilterPanel(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingMedium),
@@ -273,11 +170,9 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         children: [
           Text(
             'Filter Orders',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold) ??
-                const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: AppSizes.paddingSmall),
-          // Status filter
           DropdownButtonFormField<String>(
             decoration: InputDecoration(
               labelText: 'Status',
@@ -300,7 +195,6 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             isExpanded: true,
           ),
           const SizedBox(height: AppSizes.paddingSmall),
-          // Payment status filter
           DropdownButtonFormField<String>(
             decoration: InputDecoration(
               labelText: 'Payment Status',
@@ -324,7 +218,6 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             isExpanded: true,
           ),
           const SizedBox(height: AppSizes.paddingSmall),
-          // Merchant search
           TextField(
             decoration: InputDecoration(
               labelText: 'Merchant Name',
@@ -341,7 +234,6 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             },
           ),
           const SizedBox(height: AppSizes.paddingSmall),
-          // Date range filter
           Row(
             children: [
               Expanded(
@@ -368,10 +260,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                       fillColor: Colors.grey[100],
                     ),
                     child: Text(
-                      _startDate != null
-                          ? DateFormat('MMM dd, yyyy').format(_startDate!)
-                          : 'Select Start Date',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      _startDate != null ? DateFormat('MMM dd, yyyy').format(_startDate!) : 'Select Start Date',
                     ),
                   ),
                 ),
@@ -380,9 +269,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               Expanded(
                 child: InkWell(
                   onTap: () async {
-                    final date = await showDatePicker
-
-(
+                    final date = await showDatePicker(
                       context: context,
                       initialDate: _endDate ?? DateTime.now(),
                       firstDate: DateTime(2000),
@@ -403,10 +290,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                       fillColor: Colors.grey[100],
                     ),
                     child: Text(
-                      _endDate != null
-                          ? DateFormat('MMM dd, yyyy').format(_endDate!)
-                          : 'Select End Date',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      _endDate != null ? DateFormat('MMM dd, yyyy').format(_endDate!) : 'Select End Date',
                     ),
                   ),
                 ),
@@ -419,10 +303,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             children: [
               TextButton(
                 onPressed: _clearFilters,
-                child: const Text(
-                  'Clear Filters',
-                  style: TextStyle(color: Colors.red),
-                ),
+                child: const Text('Clear Filters', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
@@ -431,35 +312,21 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     );
   }
 
-  // Build empty orders view
   Widget _buildEmptyOrdersView(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.shopping_bag_outlined,
-            size: 100,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.shopping_bag_outlined, size: 100, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'No Orders Found',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ) ??
-                const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey[800]),
           ),
           const SizedBox(height: 8),
           Text(
             'Your orders will appear here',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]) ??
-                const TextStyle(fontSize: 16, color: Colors.grey),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -472,25 +339,24 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             onPressed: () {
               Navigator.pushNamed(context, '/products');
             },
-            child: const Text(
-              'Start Shopping',
-              style: TextStyle(fontSize: 16),
-            ),
+            child: const Text('Start Shopping', style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
     );
   }
 
-  // Build orders list
   Widget _buildOrdersList(BuildContext context, List<Order> orders) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppSizes.paddingMedium),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return OrderCard(order: order);
-      },
+    return RefreshIndicator(
+      onRefresh: _fetchOrders,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(AppSizes.paddingMedium),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+          return OrderCard(order: order);
+        },
+      ),
     );
   }
 }
@@ -525,23 +391,11 @@ class OrderCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.receipt_long,
-                        color: Theme.of(context).primaryColor,
-                        size: 20,
-                      ),
+                      Icon(Icons.receipt_long, color: Theme.of(context).primaryColor, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        'Order #${order.transactionRef.substring(0, 8)}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ) ??
-                            const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ),
+                        'Order #${order.transactionRef.length >= 8 ? order.transactionRef.substring(0, 8) : order.transactionRef}',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey[800]),
                       ),
                     ],
                   ),
@@ -551,33 +405,23 @@ class OrderCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(
-                    Icons.calendar_today,
-                    color: Colors.grey[600],
-                    size: 16,
-                  ),
+                  Icon(Icons.calendar_today, color: Colors.grey[600], size: 16),
                   const SizedBox(width: 8),
                   Text(
                     'Ordered on ${DateFormat('MMM dd, yyyy').format(order.orderDate)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]) ??
-                        const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(
-                    Icons.store,
-                    color: Colors.grey[600],
-                    size: 16,
-                  ),
+                  Icon(Icons.store, color: Colors.grey[600], size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Merchant: ${order.merchantDetail.merchantName}',
-                      style: Theme.of(context).textTheme.bodyMedium ??
-                          const TextStyle(fontSize: 14),
+                      style: Theme.of(context).textTheme.bodyMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -586,16 +430,11 @@ class OrderCard extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(
-                    Icons.shopping_bag,
-                    color: Colors.grey[600],
-                    size: 16,
-                  ),
+                  Icon(Icons.shopping_bag, color: Colors.grey[600], size: 16),
                   const SizedBox(width: 8),
                   Text(
                     '${order.products.length} item${order.products.length > 1 ? 's' : ''}',
-                    style: Theme.of(context).textTheme.bodyMedium ??
-                        const TextStyle(fontSize: 14),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
@@ -605,15 +444,7 @@ class OrderCard extends StatelessWidget {
                 children: [
                   Text(
                     'Total: \$${order.totalPrice.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
-                            ) ??
-                        TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
                   ),
                   _buildPaymentStatusChip(context, order.paymentStatus),
                 ],
@@ -640,15 +471,8 @@ class OrderCard extends StatelessWidget {
       default:
         chipColor = Colors.grey;
     }
-
     return Chip(
-      label: Text(
-        status,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-        ),
-      ),
+      label: Text(status, style: const TextStyle(color: Colors.white, fontSize: 12)),
       backgroundColor: chipColor,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -675,15 +499,8 @@ class OrderCard extends StatelessWidget {
       default:
         chipColor = Colors.grey;
     }
-
     return Chip(
-      label: Text(
-        paymentStatus,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-        ),
-      ),
+      label: Text(paymentStatus, style: const TextStyle(color: Colors.white, fontSize: 12)),
       backgroundColor: chipColor,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

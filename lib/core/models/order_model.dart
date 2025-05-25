@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 
 class Order {
   final String id;
@@ -7,7 +6,7 @@ class Order {
   final List<OrderProduct> products;
   final Auction? auction;
   final double totalPrice;
-  final String status;
+  String status;
   final String paymentStatus;
   final Location location;
   final String transactionRef;

@@ -89,7 +89,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> {
     final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     return Scaffold(
-      appBar: BahirMartAppBar(title: 'Auction Details'),
+      appBar: const BahirMartAppBar(title: 'Auction Details'),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
