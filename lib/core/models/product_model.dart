@@ -193,8 +193,8 @@ class ProductCategory {
 
   factory ProductCategory.fromJson(Map<String, dynamic> json) {
     return ProductCategory(
-      categoryId: json['categoryId'],
-      categoryName: json['categoryName'],
+      categoryId: json['categoryId'] ?? json['_id'] ?? '',
+      categoryName: json['categoryName'] ?? json['name'] ?? 'Unknown Category',
     );
   }
 }
@@ -252,9 +252,9 @@ class MerchantDetail {
 
   factory MerchantDetail.fromJson(Map<String, dynamic> json) {
     return MerchantDetail(
-      merchantId: json['merchantId'],
-      merchantName: json['merchantName'],
-      merchantEmail: json['merchantEmail'],
+      merchantId: json['merchantId'] ?? json['_id'] ?? '',
+      merchantName: json['merchantName'] ?? '',
+      merchantEmail: json['merchantEmail'] ?? '',
     );
   }
 }

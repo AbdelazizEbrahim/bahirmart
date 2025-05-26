@@ -137,8 +137,10 @@ class _ProductsPageState extends State<ProductsPage> {
         // Search phrase filter
         if (_searchController.text.isNotEmpty) {
           final searchLower = _searchController.text.toLowerCase();
-          bool matchesName = product.productName.toLowerCase().contains(searchLower) ?? false;
-          bool matchesDescription = product.description.toLowerCase().contains(searchLower) ?? false;
+          bool matchesName =
+              product.productName.toLowerCase().contains(searchLower) ?? false;
+          bool matchesDescription =
+              product.description.toLowerCase().contains(searchLower) ?? false;
           if (!matchesName && !matchesDescription) {
             return false;
           }
@@ -149,12 +151,13 @@ class _ProductsPageState extends State<ProductsPage> {
             product.price! > _priceRange.end) {
           return false;
         }
-      
+
         // Rating filter
         if (product.review?.isNotEmpty ?? false) {
-          final avgRating =
-              product.review!.map((r) => r.rating ?? 0).reduce((a, b) => a + b) /
-                  product.review!.length;
+          final avgRating = product.review!
+                  .map((r) => r.rating ?? 0)
+                  .reduce((a, b) => a + b) /
+              product.review!.length;
           if (avgRating < _ratingRange.start || avgRating > _ratingRange.end) {
             return false;
           }
@@ -167,7 +170,7 @@ class _ProductsPageState extends State<ProductsPage> {
             product.quantity! > _quantityRange.end) {
           return false;
         }
-      
+
         // Delivery type filter
         if (_selectedDeliveryType != null &&
             product.delivery != _selectedDeliveryType) {
@@ -176,17 +179,6 @@ class _ProductsPageState extends State<ProductsPage> {
 
         return true;
       }).toList();
-    });
-  }
-
-  void _resetFilters() {
-    setState(() {
-      _selectedCategoryId = widget.categoryId;
-      _selectedDeliveryType = null;
-      _priceRange = const RangeValues(0, 1000);
-      _ratingRange = const RangeValues(0, 5);
-      _quantityRange = const RangeValues(0, 100);
-      _applyFilters();
     });
   }
 
@@ -326,7 +318,16 @@ class _ProductsPageState extends State<ProductsPage> {
             const SizedBox(height: 16),
             Center(
               child: ElevatedButton(
-                onPressed: _resetFilters,
+                onPressed: () {
+                  setState(() {
+                    _selectedCategoryId = null;
+                    _selectedDeliveryType = null;
+                    _priceRange = const RangeValues(0, 1000);
+                    _ratingRange = const RangeValues(0, 5);
+                    _quantityRange = const RangeValues(0, 100);
+                    _applyFilters();
+                  });
+                },
                 child: const Text('Reset Filters'),
               ),
             ),

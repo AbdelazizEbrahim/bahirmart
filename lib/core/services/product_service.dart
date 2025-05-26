@@ -165,8 +165,19 @@ class ProductService {
       // Handle the response
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Check if the 'products' field exists and is a list, return empty list if null or empty
-        if (data['products'] is List && data['products'].isNotEmpty) {
+        print('Decoded response data: $data');
+
+        // Check if data is a list directly
+        if (data is List) {
+          final products = List<prod_model.Product>.from(
+            data.map((item) => prod_model.Product.fromJson(item)),
+          );
+          print(
+              'Fetched ${products.length} products: ${products.map((p) => p.productName).toList()}');
+          return products;
+        }
+        // Check if the 'products' field exists and is a list
+        else if (data['products'] is List && data['products'].isNotEmpty) {
           final products = List<prod_model.Product>.from(
             data['products'].map((item) => prod_model.Product.fromJson(item)),
           );

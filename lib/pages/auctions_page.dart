@@ -56,7 +56,8 @@ class _AuctionListPageState extends State<AuctionListPage> {
 
     setState(() => _isLoading = true);
     try {
-      final newAuctions = await _auctionService.fetchAuctions(_currentPage, _limit);
+      final newAuctions =
+          await _auctionService.fetchAuctions(_currentPage, _limit);
       setState(() {
         _auctions.addAll(newAuctions);
         _filteredAuctions = _auctions;
@@ -80,18 +81,23 @@ class _AuctionListPageState extends State<AuctionListPage> {
       _filteredAuctions = _auctions.where((auction) {
         final searchLower = _searchController.text.toLowerCase();
         if (searchLower.isNotEmpty) {
-          if (!(auction.auctionTitle?.toLowerCase().contains(searchLower) ?? false) &&
-              !(auction.description?.toLowerCase().contains(searchLower) ?? false) &&
-              !(auction.merchantName?.toLowerCase().contains(searchLower) ?? false)) {
+          if (!(auction.auctionTitle?.toLowerCase().contains(searchLower) ??
+                  false) &&
+              !(auction.description?.toLowerCase().contains(searchLower) ??
+                  false) &&
+              !(auction.merchantName?.toLowerCase().contains(searchLower) ??
+                  false)) {
             return false;
           }
         }
 
-        if (_selectedCategory != 'All' && auction.category != _selectedCategory) {
+        if (_selectedCategory != 'All' &&
+            auction.category != _selectedCategory) {
           return false;
         }
 
-        if (_selectedCondition != 'All' && auction.condition != _selectedCondition) {
+        if (_selectedCondition != 'All' &&
+            auction.condition != _selectedCondition) {
           return false;
         }
 
@@ -127,7 +133,8 @@ class _AuctionListPageState extends State<AuctionListPage> {
 
     if (min > max) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Min price cannot be greater than max price')),
+        const SnackBar(
+            content: Text('Min price cannot be greater than max price')),
       );
       return;
     }
@@ -180,7 +187,8 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     });
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -190,9 +198,13 @@ class _AuctionListPageState extends State<AuctionListPage> {
                       children: [
                         const Icon(Icons.filter_list),
                         const SizedBox(width: 8),
-                        Text(_isFilterExpanded ? 'Hide Filters' : 'Show Filters'),
+                        Text(_isFilterExpanded
+                            ? 'Hide Filters'
+                            : 'Show Filters'),
                         const SizedBox(width: 8),
-                        Icon(_isFilterExpanded ? Icons.expand_less : Icons.expand_more),
+                        Icon(_isFilterExpanded
+                            ? Icons.expand_less
+                            : Icons.expand_more),
                       ],
                     ),
                   ),
@@ -221,17 +233,6 @@ class _AuctionListPageState extends State<AuctionListPage> {
                         (value) {
                           setState(() {
                             _selectedCondition = value;
-                            _filterAuctions();
-                          });
-                        },
-                      ),
-                      _buildFilterChip(
-                        'Status',
-                        ['All', 'active', 'ended', 'pending', 'cancelled'],
-                        _selectedStatus,
-                        (value) {
-                          setState(() {
-                            _selectedStatus = value;
                             _filterAuctions();
                           });
                         },
@@ -304,10 +305,12 @@ class _AuctionListPageState extends State<AuctionListPage> {
                     : ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.all(16),
-                        itemCount: _filteredAuctions.length + (_hasMore ? 1 : 0),
+                        itemCount:
+                            _filteredAuctions.length + (_hasMore ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (index == _filteredAuctions.length && _hasMore) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
                           final auction = _filteredAuctions[index];
                           return _buildAuctionCard(auction);
@@ -351,7 +354,8 @@ class _AuctionListPageState extends State<AuctionListPage> {
   }
 
   Widget _buildAuctionCard(Auction auction) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat =
+        NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -371,7 +375,8 @@ class _AuctionListPageState extends State<AuctionListPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
               child: CachedNetworkImage(
                 imageUrl: auction.itemImg?.isNotEmpty == true
                     ? auction.itemImg!.first
@@ -396,9 +401,10 @@ class _AuctionListPageState extends State<AuctionListPage> {
                       Expanded(
                         child: Text(
                           auction.auctionTitle ?? 'Untitled Auction',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -466,13 +472,17 @@ class _AuctionListPageState extends State<AuctionListPage> {
                         children: [
                           Text(
                             'Current Bid',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
                           ),
                           Text(
                             currencyFormat.format(auction.startingPrice ?? 0.0),
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -485,7 +495,10 @@ class _AuctionListPageState extends State<AuctionListPage> {
                           const SizedBox(width: 4),
                           Text(
                             auction.formattedTimeRemaining,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
                                   color: Colors.grey[600],
                                 ),
                           ),
@@ -520,9 +533,11 @@ class _AuctionListPageState extends State<AuctionListPage> {
   void _showBidDialog(Auction auction) {
     final TextEditingController bidController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat =
+        NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
-    final minBid = (auction.startingPrice ?? 0.0) + (auction.bidIncrement ?? 1.0);
+    final minBid =
+        (auction.startingPrice ?? 0.0) + (auction.bidIncrement ?? 1.0);
     bidController.text = minBid.toStringAsFixed(2);
 
     showDialog(
@@ -597,7 +612,8 @@ class _AuctionListPageState extends State<AuctionListPage> {
 
   void _placeBid(Auction auction, double bidAmount) async {
     try {
-      final updatedAuction = await _auctionService.placeBid(auction.id!, bidAmount);
+      final updatedAuction =
+          await _auctionService.placeBid(auction.id!, bidAmount);
       setState(() {
         final index = _auctions.indexWhere((a) => a.id == auction.id);
         if (index != -1) {

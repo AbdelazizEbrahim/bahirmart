@@ -55,8 +55,8 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     final user = Provider.of<UserProvider>(context, listen: false).user;
     if (user != null) {
       setState(() {
-        _hasUserReviewed =
-            widget.product.review!.any((review) => review.customerId == user.id);
+        _hasUserReviewed = widget.product.review!
+            .any((review) => review.customerId == user.id);
       });
     }
   }
@@ -462,8 +462,8 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                                     child: Row(
                                       children: [
                                         Text(
-                                          (widget.product.review
-                                                      !.map((r) => r.rating)
+                                          (widget.product.review!
+                                                      .map((r) => r.rating)
                                                       .reduce((a, b) => a + b) /
                                                   widget.product.review!.length)
                                               .toStringAsFixed(1),
@@ -528,8 +528,9 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                                                     MainAxisAlignment
                                                         .spaceBetween,
                                                 children: [
-                                                  _buildRatingStars(
-                                                      review!.rating.toDouble()),
+                                                  _buildRatingStars(review!
+                                                      .rating
+                                                      .toDouble()),
                                                   Text(
                                                     dateFormat.format(
                                                         review.createdDate),

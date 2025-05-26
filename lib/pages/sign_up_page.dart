@@ -44,7 +44,8 @@ class _SignUpPageState extends State<SignUpPage> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Firebase initialization failed: ${e.toString()}')),
+        SnackBar(
+            content: Text('Firebase initialization failed: ${e.toString()}')),
       );
     }
   }
@@ -62,31 +63,25 @@ class _SignUpPageState extends State<SignUpPage> {
         return;
       }
 
-      print('SignUp: [${DateTime.now()}] Form validation passed, email: $email');
       setState(() {
         _isLoading = true;
-        print('SignUp: [${DateTime.now()}] Setting isLoading to true');
       });
       try {
         final userData = {
           'fullName': _fullNameController.text.trim(),
           'email': email,
           'password': _passwordController.text,
-          'role': 'customer', // Hardcoded to customer
+          'role': 'customer',
           'phoneNumber': _phoneController.text.trim(),
-          'address': {
-            'state': _stateController.text.trim(),
-            'city': _cityController.text.trim(),
-          },
+          'stateName': _stateController.text.trim(),
+          'cityName': _cityController.text.trim(),
         };
+        print(
+            'SignUp: [${DateTime.now()}] Sending userData to signUp: $userData');
 
-        print('SignUp: [${DateTime.now()}] Attempting signup with userData: $userData');
         final response = await AuthService.signUp(userData);
-        print('SignUp: [${DateTime.now()}] Signup successful, OTP sent to $email');
-        print('SignUp: [${DateTime.now()}] Navigating to verify-otp with email: $email');
         Navigator.pushNamed(context, '/verify-otp', arguments: email);
       } catch (e) {
-        print('SignUp: [${DateTime.now()}] Signup failed: $e');
         String errorMessage = 'Signup failed. Please try again.';
         if (e.toString().contains('email')) {
           errorMessage = 'Failed to send OTP email. Check your email address.';
@@ -97,12 +92,9 @@ class _SignUpPageState extends State<SignUpPage> {
       } finally {
         setState(() {
           _isLoading = false;
-          print('SignUp: [${DateTime.now()}] Setting isLoading to false');
         });
       }
-    } else {
-      print('SignUp: [${DateTime.now()}] Form validation failed');
-    }
+    } else {}
   }
 
   @override

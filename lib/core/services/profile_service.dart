@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:bahirmart/main.dart';
 
 class ProfileService {
+  final String _baseUrl = dotenv.env['BASE_URL'] ?? 'http://localhost:3000/api';
+
   Future<void> fetchUserProfile(BuildContext context) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -23,7 +25,7 @@ class ProfileService {
       }
 
       final response = await http.get(
-        Uri.parse('http://192.168.35.75:4000/api/mobile-profile'),
+        Uri.parse('$_baseUrl/mobile/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -82,7 +84,7 @@ class ProfileService {
       }
 
       final response = await http.put(
-        Uri.parse('http://192.168.35.75:4000/api/mobile-profile'),
+        Uri.parse('$_baseUrl/mobile/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -154,18 +156,18 @@ class ProfileService {
         return;
       }
 
-      final baseUrl = dotenv.env['BASE_URL'];
+      final response = await http.put(
+        Uri.parse('$_baseUrl/mobile/password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'currentPassword': passwordData['currentPassword'],
+          'newPassword': passwordData['newPassword'],
+        }),
+      );
 
-      final response = await http.put(Uri.parse('$baseUrl/mobile-password'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
-            'currentPassword': passwordData['currentPassword'],
-            'newPassword': passwordData['newPassword'],
-          }));
-          
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
