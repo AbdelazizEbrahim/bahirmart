@@ -17,6 +17,7 @@ class Product {
   final double deliveryPrice;
   final double? kilogramPerPrice;
   final double? kilometerPerPrice;
+  final double? weight;
   final bool isBanned;
   final bool isDeleted;
   final DateTime? trashDate;
@@ -42,6 +43,7 @@ class Product {
     required this.deliveryPrice,
     this.kilogramPerPrice,
     this.kilometerPerPrice,
+    this.weight,
     this.isBanned = false,
     this.isDeleted = false,
     this.trashDate,
@@ -102,6 +104,7 @@ class Product {
       'deliveryPrice': deliveryPrice,
       'kilogramPerPrice': kilogramPerPrice,
       'kilometerPerPrice': kilometerPerPrice,
+      'weight': weight,
       'isBanned': isBanned,
       'isDeleted': isDeleted,
       'trashDate': trashDate?.toIso8601String(),
@@ -139,6 +142,8 @@ class Product {
       kilometerPerPrice: (json['kilometerPerPrice'] is num)
           ? (json['kilometerPerPrice'] as num).toDouble()
           : null,
+      weight:
+          (json['weight'] is num) ? (json['weight'] as num).toDouble() : null,
       isBanned: json['isBanned'] ?? false,
       isDeleted: json['isDeleted'] ?? false,
       trashDate: json['trashDate'] != null
@@ -180,23 +185,25 @@ class Offer {
 
 class ProductCategory {
   final String categoryId;
-  final String categoryName;
+  final String name;
 
-  ProductCategory({required this.categoryId, required this.categoryName});
+  ProductCategory({required this.categoryId, required this.name});
 
   Map<String, dynamic> toJson() {
     return {
       'categoryId': categoryId,
-      'categoryName': categoryName,
+      'name': name,
     };
   }
 
   factory ProductCategory.fromJson(Map<String, dynamic> json) {
     return ProductCategory(
       categoryId: json['categoryId'] ?? json['_id'] ?? '',
-      categoryName: json['categoryName'] ?? json['name'] ?? 'Unknown Category',
+      name: json['name'] ?? 'Unknown Category',
     );
   }
+
+  get categoryName => null;
 }
 
 class Review {
@@ -235,11 +242,19 @@ class MerchantDetail {
   final String merchantId;
   final String merchantName;
   final String merchantEmail;
+  final String? phoneNumber;
+  final String? accountName;
+  final String? accountNumber;
+  final String? bankCode;
 
   MerchantDetail({
     required this.merchantId,
     required this.merchantName,
     required this.merchantEmail,
+    this.phoneNumber,
+    this.accountName,
+    this.accountNumber,
+    this.bankCode,
   });
 
   Map<String, dynamic> toJson() {
@@ -247,6 +262,10 @@ class MerchantDetail {
       'merchantId': merchantId,
       'merchantName': merchantName,
       'merchantEmail': merchantEmail,
+      'phoneNumber': phoneNumber,
+      'account_name': accountName,
+      'account_number': accountNumber,
+      'bank_code': bankCode,
     };
   }
 
@@ -255,6 +274,10 @@ class MerchantDetail {
       merchantId: json['merchantId'] ?? json['_id'] ?? '',
       merchantName: json['merchantName'] ?? '',
       merchantEmail: json['merchantEmail'] ?? '',
+      phoneNumber: json['phoneNumber'],
+      accountName: json['account_name'],
+      accountNumber: json['account_number'],
+      bankCode: json['bank_code'],
     );
   }
 }

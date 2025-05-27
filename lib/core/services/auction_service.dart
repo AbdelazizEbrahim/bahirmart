@@ -71,7 +71,7 @@ class AuctionService {
       Uri.parse('$baseUrl/bid'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token', // ✅ Send token here
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'auctionId': auctionId,
@@ -81,12 +81,22 @@ class AuctionService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      if (data['success'] != true || data['data'] == null) {
+      if (data['message'] == null ||
+          data['highestBid'] == null ||
+          data['totalBids'] == null) {
         throw Exception('Invalid response format');
       }
-      return Auction.fromJson(data['data']);
+      // Update the Auction object with the response data
+      return Auction.fromJson({
+        'id': auctionId,
+        'highestBid': data['highestBid'],
+        'totalBids': data['totalBids'],
+        // Include other necessary fields if required by Auction.fromJson
+      });
     } else {
-      throw Exception('Failed to place bid: ${response.body}');
+      final errorData = jsonDecode(response.body);
+      throw Exception(
+          errorData['message'] ?? 'Failed to place bid: ${response.body}');
     }
   }
 }

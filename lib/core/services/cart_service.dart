@@ -230,36 +230,67 @@ class CartService extends ChangeNotifier {
         return null;
       }
 
+      // Get the first merchant's details from the products
+      final merchant = merchantProducts.first.product.merchantDetail;
+
+      // Calculate the total amount including delivery costs
+      final subtotal = merchantProducts.fold<double>(
+        0,
+        (sum, product) =>
+            sum + (product.product.currentPrice * product.quantity),
+      );
+
+      final deliveryCost = merchantProducts.fold<double>(
+        0,
+        (sum, product) =>
+            sum + product.product.calculateDeliveryCost(product.quantity),
+      );
+
+      final totalAmount = subtotal + deliveryCost;
+
       final orderData = {
-        'user': {
-          'id': user.id,
-          'email': user.email,
-          'fullName': user.fullName,
+        'amount': totalAmount, // This is what the backend expects
+        'total': totalAmount, // This is for the order data
+        'customerDetail': {
+          'customerId': user.id,
+          'customerName': user.fullName,
+          'phoneNumber': user.phoneNumber ?? '',
+          'customerEmail': user.email,
+          'address': {
+            'state': user.stateName ?? '',
+            'city': user.cityName ?? '',
+          }
         },
-        'merchantId': merchantId,
+        'merchantDetail': {
+          'merchantId': merchant.merchantId,
+          'merchantName': merchant.merchantName,
+          'merchantEmail': merchant.merchantEmail,
+          'phoneNumber': merchant.phoneNumber,
+          'account_name': merchant.accountName,
+          'account_number': merchant.accountNumber,
+          'bank_code': merchant.bankCode,
+        },
         'products': merchantProducts
             .map((product) => {
                   'productId': product.product.id,
                   'productName': product.product.productName,
                   'quantity': product.quantity,
                   'price': product.product.currentPrice,
-                  'deliveryType': product.product.delivery,
+                  'delivery': product.product.delivery,
                   'deliveryPrice': product.product.deliveryPrice,
+                  'categoryName': product.product.category.name,
+                  'weight': product.product.weight ?? 0,
+                  'location': product.product.location.toJson(),
                 })
             .toList(),
-        'subtotal': merchantProducts.fold<double>(
-          0,
-          (sum, p) => sum + (p.product.currentPrice * p.quantity),
-        ),
-        'deliveryCost': Provider.of<CartService>(context, listen: false)
-            .getMerchantDeliveryCost(merchantId),
-        'total': total,
-        'currency': 'ETB',
-        'timestamp': DateTime.now().toIso8601String(),
+        'totalPrice': totalAmount,
         'location': {
+          'type': 'Point',
           'coordinates': [position.longitude, position.latitude],
-        },
+        }
       };
+
+      print('Sending order data: $orderData'); // Debug log
 
       final url = Uri.parse('$_baseUrl/checkout/mobile');
       final response = await http.post(
@@ -273,19 +304,28 @@ class CartService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        return {
-          'checkout_url': responseData['checkout_url'],
-          'tx_ref': responseData['tx_ref'],
-          'orderId': responseData['orderId'],
-        };
+        if (responseData['checkout_url'] != null &&
+            responseData['tx_ref'] != null &&
+            responseData['orderId'] != null) {
+          return {
+            'checkout_url': responseData['checkout_url'],
+            'tx_ref': responseData['tx_ref'],
+            'orderId': responseData['orderId'],
+          };
+        } else {
+          throw Exception('Invalid response format from server');
+        }
       } else {
         final error = jsonDecode(response.body)['message'] ?? 'Checkout failed';
+        print(
+            'Checkout failed with status ${response.statusCode}: $error'); // Debug log
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Checkout failed: $error')),
         );
         return null;
       }
     } catch (e) {
+      print('Checkout Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error initializing payment')),
       );

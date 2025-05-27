@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:bahirmart/components/app_bar.dart';
 import 'package:bahirmart/components/bottom_navigation_bar.dart';
@@ -11,8 +12,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 class CartPage extends StatelessWidget {
   const CartPage({Key? key}) : super(key: key);
 
-  static const String _baseUrl =
-      'http://localhost:3000'; // Replace with your actual base URL
+  static String _baseUrl =
+      dotenv.env['BASE_URL'] ?? 'http://localhost:3000/api';
 
   @override
   Widget build(BuildContext context) {
@@ -252,6 +253,8 @@ class CartPage extends StatelessWidget {
                                             .map((item) => item.product.id)
                                             .toList();
 
+                                        if (!context.mounted) return;
+
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -260,40 +263,37 @@ class CartPage extends StatelessWidget {
                                               txRef: paymentData['tx_ref'],
                                               productIds: productIds,
                                               merchantId: merchantId,
+                                              orderId: paymentData['orderId'],
+                                              onPaymentComplete: (txRef) async {
+                                                final isVerified =
+                                                    await cartService
+                                                        .verifyPayment(txRef);
+                                                if (isVerified) {
+                                                  cartService.removeProducts(
+                                                      productIds);
+                                                  if (!context.mounted) return;
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                        content: Text(
+                                                            'Payment verified successfully!')),
+                                                  );
+                                                  Navigator
+                                                      .pushReplacementNamed(
+                                                          context, '/orders');
+                                                } else {
+                                                  if (!context.mounted) return;
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                        content: Text(
+                                                            'Payment verification failed. Please contact support.')),
+                                                  );
+                                                }
+                                              },
                                             ),
                                           ),
-                                        ).then((result) async {
-                                          if (result != null &&
-                                              result['success'] == true) {
-                                            final isVerified =
-                                                await cartService.verifyPayment(
-                                                    result['tx_ref']);
-                                            if (isVerified) {
-                                              cartService
-                                                  .removeProducts(productIds);
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                    content: Text(
-                                                        'Payment verified successfully!')),
-                                              );
-                                            } else {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                    content: Text(
-                                                        'Payment verification failed.')),
-                                              );
-                                            }
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Payment not completed.')),
-                                            );
-                                          }
-                                        });
+                                        );
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -356,6 +356,8 @@ class WebViewPage extends StatefulWidget {
   final String txRef;
   final List<String> productIds;
   final String merchantId;
+  final String orderId;
+  final Function(String txRef) onPaymentComplete;
 
   const WebViewPage({
     Key? key,
@@ -363,6 +365,8 @@ class WebViewPage extends StatefulWidget {
     required this.txRef,
     required this.productIds,
     required this.merchantId,
+    required this.orderId,
+    required this.onPaymentComplete,
   }) : super(key: key);
 
   @override
@@ -371,6 +375,7 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -379,15 +384,21 @@ class _WebViewPageState extends State<WebViewPage> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
+          onPageStarted: (String url) {
+            setState(() {
+              _isLoading = true;
+            });
+          },
+          onPageFinished: (String url) {
+            setState(() {
+              _isLoading = false;
+            });
+          },
           onNavigationRequest: (NavigationRequest request) {
-            if (request.url.contains('/verifyPayment')) {
-              Navigator.of(context).pop({
-                'success': true,
-                'tx_ref': widget.txRef,
-              });
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
+            // Close WebView and verify payment when user completes payment
+            Navigator.of(context).pop();
+            widget.onPaymentComplete(widget.txRef);
+            return NavigationDecision.prevent;
           },
         ),
       )
@@ -397,8 +408,24 @@ class _WebViewPageState extends State<WebViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Payment')),
-      body: WebViewWidget(controller: _controller),
+      appBar: AppBar(
+        title: const Text('Payment'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
+      ),
     );
   }
 }
